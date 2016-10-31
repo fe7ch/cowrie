@@ -122,15 +122,15 @@ class HoneyPotTelnetAuthProtocol(AuthenticatingTelnetProtocol):
             d.addErrback(self._ebLogin)
 
         # are we dealing with a real Telnet client?
-        if self.transport.options:
+        # if self.transport.options:
             # stop ECHO
             # even if ECHO negotiation fails we still want to attempt a login
             # this allows us to support dumb clients which is common in malware
             # thus the addBoth: on success and on exception (AlreadyNegotiating)
-            self.transport.wont(ECHO).addBoth(login)
-        else:
+        #    self.transport.wont(ECHO).addBoth(login)
+        #else:
             # process login
-            login('')
+        login('')
 
         return 'Discard'
 
