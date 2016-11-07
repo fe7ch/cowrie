@@ -106,7 +106,7 @@ class HoneyPotTelnetAuthProtocol(AuthenticatingTelnetProtocol):
         self.username = line
         # only send ECHO option if we are chatting with a real Telnet client
         #if self.transport.options: <-- doesn't work
-        # self.transport.will(ECHO)
+        self.transport.will(ECHO)
         # FIXME: this should be configurable or provided via filesystem
         self.transport.write(self.passwordPrompt)
         return 'Password'
