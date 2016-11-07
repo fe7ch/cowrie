@@ -369,7 +369,17 @@ logfile = log/cowrie.json
 #username = cowrie
 #password = secret
 #port = 3306
+#debug = false
 
+# Rethinkdb output module
+# Rethinkdb output module requires extra Python module: pip install rethinkdb
+
+#[output_rethinkdblog]
+#host = 127.0.0.1
+#port = 28015
+#table = output
+#password =
+#db = cowrie
 
 # SQLite3 logging module
 #
