@@ -17,9 +17,9 @@ Mem:       8069256    7872920     196336          0     410340    5295748
 Swap:      3764220     133080    3631140"""
 
 FREE_MEGA="""             total       used       free     shared    buffers     cached
-Mem:          7880       7690        189          0        400       5171
--/+ buffers/cache:       2118       5761
-Swap:         3675        129       3546"""
+Mem:          29.5       25        3          0        0.8       5
+-/+ buffers/cache:       2       5
+Swap:         3        0.1       3"""
 
 FREE_HUMAN="""             total       used       free     shared    buffers     cached
 Mem:          7.7G       7.5G       189M         0B       400M       5.1G
