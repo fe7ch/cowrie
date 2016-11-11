@@ -159,7 +159,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                 with open(self.stdinlogFile, 'rb') as f:
                     shasum = hashlib.sha256(f.read()).hexdigest()
                     shasumfile = self.downloadPath + "/" + shasum
-                    if (os.path.exists(shasumfile)):
+                    if os.path.exists(shasumfile):
                         os.remove(self.stdinlogFile)
                     else:
                         os.rename(self.stdinlogFile, shasumfile)
@@ -174,21 +174,25 @@ class LoggingServerProtocol(insults.ServerProtocol):
             finally:
                 self.stdinlogOpen = False
 
+        shasum = ''
+        shasumfile = ''
+
         if self.redirlogOpen:
             try:
-                with open(self.redirlogFile, 'rb') as f:
-                    shasum = hashlib.sha256(f.read()).hexdigest()
-                    shasumfile = self.downloadPath + "/" + shasum
-                    if (os.path.exists(shasumfile)):
-                        os.remove(self.redirlogFile)
-                    else:
-                        os.rename(self.redirlogFile, shasumfile)
-                    os.symlink(shasum, self.redirlogFile)
-                log.msg(eventid='cowrie.session.file_download',
-                        format='Saved redir contents to %(outfile)s',
-                        url='redir',
-                        outfile=shasumfile,
-                        shasum=shasum)
+                if os.path.getsize(self.redirlogFile) > 0:
+                    with open(self.redirlogFile, 'rb') as f:
+                        shasum = hashlib.sha256(f.read()).hexdigest()
+                        shasumfile = self.downloadPath + "/" + shasum
+                        if os.path.exists(shasumfile):
+                            os.remove(self.redirlogFile)
+                        else:
+                            os.rename(self.redirlogFile, shasumfile)
+                        os.symlink(shasum, self.redirlogFile)
+                    log.msg(eventid='cowrie.session.file_download',
+                            format='Saved redir contents to %(outfile)s',
+                            url='redir',
+                            outfile=shasumfile,
+                            shasum=shasum)
             except IOError as e:
                 pass
             finally:
