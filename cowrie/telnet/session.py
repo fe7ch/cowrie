@@ -63,18 +63,26 @@ class HoneyPotTelnetSession(TelnetBootstrapProtocol):
 
         # If we are dealing with a proper Telnet client: enable server echo
         if self.transport.options:
-            self.transport.will(SGA)
-            self.transport.will(ECHO)
+            self.transport.willChain(SGA)
+            self.transport.willChain(ECHO)
 
         self.protocol = insults.LoggingTelnetServerProtocol(
                 cproto.HoneyPotInteractiveTelnetProtocol, self)
         self.protocol.makeConnection(processprotocol)
         processprotocol.makeConnection(session.wrapProtocol(self.protocol))
 
+
+    def connectionLost(self, reason):
+        """
     # TODO do I need to implement connectionLost?
     # XXX verify if HoneyPotTelnetAuthProtocol's connectionLost fires otherwise
     #     we'll have to reimplement some of the stuff here
-    #def connectionLost(self, reason):
+        """
+        TelnetBootstrapProtocol.connectionLost(self, reason)
+        self.server = None
+        self.cfg = None
+        self.avatar = None
+
     #    pt = self.transport
     #    if pt.transport.sessionno in pt.factory.sessions:
     #        del pt.factory.sessions[pt.transport.sessionno]
@@ -135,6 +143,7 @@ class TelnetSessionProcessProtocol(protocol.ProcessProtocol):
 
     def connectionLost(self, reason = None):
         self.session.loseConnection()
+        self.session = None
 
 
     # here SSH is doing signal handling, I don't think telnet supports that so

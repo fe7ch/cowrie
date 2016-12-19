@@ -1,29 +1,33 @@
-#!/usr/bin/env python
+#
 
 import time
 import re
 import tftpy
 import os
+
+from cowrie.core.honeypot import HoneyPotCommand
+from cowrie.core.fs import *
 from cowrie.core.customparser import CustomParser
 from cowrie.core.customparser import OptionNotFound
 from cowrie.core.customparser import ExitException
-from cowrie.core.honeypot import HoneyPotCommand
-from cowrie.core.fs import *
 
+"""
+"""
 
 commands = {}
 
 
 class Progress(object):
-
+    """
+    """
     def __init__(self, protocol):
-
         self.progress = 0
         self.out = protocol
 
 
     def progresshook(self, pkt):
-
+        """
+        """
         if isinstance(pkt, tftpy.TftpPacketDAT):
             self.progress += len(pkt.data)
             self.out.write("Transferred %d bytes" % self.progress + "\n")
@@ -31,20 +35,22 @@ class Progress(object):
             self.out.write("Received OACK, options are: %s" % pkt.options + "\n")
 
 
+
 class command_tftp(HoneyPotCommand):
+    """
+    """
 
     port = 69
-
     hostname = None
     file_to_get = None
 
     def makeTftpRetrieval(self):
-
+        """
+        """
         progresshook = Progress(self).progresshook
-
-        tclient = tftpy.TftpClient(self.hostname,
-                                   int(self.port))
+        tclient = tftpy.TftpClient(self.hostname, int(self.port))
         cfg = self.protocol.cfg
+
         if cfg.has_option('honeypot', 'download_limit_size'):
             self.limit_size = int(cfg.get('honeypot', 'download_limit_size'))
 
@@ -71,12 +77,6 @@ class command_tftp(HoneyPotCommand):
                 os.remove(self.safeoutfile)
                 log.msg("Not storing duplicate content " + shasum)
 
-            self.protocol.logDispatch(eventid='cowrie.session.file_download',
-                                      format='Downloaded tftpFile (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-                                      url=self.file_to_get,
-                                      outfile=hash_path,
-                                      shasum=shasum)
-
             log.msg(eventid='cowrie.session.file_download',
                     format='Downloaded tftpFile (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                     url=self.file_to_get,
@@ -90,8 +90,19 @@ class command_tftp(HoneyPotCommand):
             self.safeoutfile = hash_path
 
             # Update the honeyfs to point to downloaded file
+            os.symlink(shasum, self.safeoutfile)
+
+            # FIXME: is this necessary?
+            self.safeoutfile = hash_path
+
+            # Update the honeyfs to point to downloaded file
             f = self.fs.getfile(self.file_to_get)
             f[A_REALFILE] = hash_path
+
+            log.msg(eventid='cowrie.session.file_download',
+                    format='Downloaded tftpFile to %(outfile)s',
+                    outfile=self.safeoutfile
+                    )
 
         except tftpy.TftpException, err:
             return
@@ -101,7 +112,8 @@ class command_tftp(HoneyPotCommand):
 
 
     def start(self):
-
+        """
+        """
         parser = CustomParser(self)
         parser.prog = "tftp"
         parser.add_argument("hostname", nargs='?', default=None)
@@ -144,6 +156,7 @@ class command_tftp(HoneyPotCommand):
             return
 
         self.exit()
+
 
 commands['tftp'] = command_tftp
 commands['/usr/bin/tftp'] = command_tftp
