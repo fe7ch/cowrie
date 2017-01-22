@@ -53,9 +53,6 @@ class HoneyPotTelnetFactory(protocol.ServerFactory):
         except IOError:
             self.banner = ""
 
-        # Interactive protocols are kept here for the interact feature
-        self.sessions = {}
-
         # For use by the uptime command
         self.starttime = time.time()
 
@@ -86,8 +83,6 @@ class HoneyPotTelnetAuthProtocol(AuthenticatingTelnetProtocol):
     def connectionMade(self):
         """
         """
-        self.factory.sessions[self.transport.transport.sessionno] = self.transport.transportId
-        
         self.transport.negotiationMap[NAWS] = self.telnet_NAWS
         # Initial option negotation. Want something at least for Mirai
         for opt in (NAWS,):
@@ -103,8 +98,6 @@ class HoneyPotTelnetAuthProtocol(AuthenticatingTelnetProtocol):
         """
         Fires on pre-authentication disconnects
         """
-        if self.transport.transport.sessionno in self.factory.sessions:
-            del self.factory.sessions[self.transport.transport.sessionno]
         AuthenticatingTelnetProtocol.connectionLost(self, reason)
 
 
@@ -145,6 +138,10 @@ class HoneyPotTelnetAuthProtocol(AuthenticatingTelnetProtocol):
 
         return 'Discard'
 
+    def telnet_Command(self, command):
+        self.transport.protocol.dataReceived(command+'\r')
+        return "Command"
+
     def _cbLogin(self, ial):
         """
         Fired on a successful login
@@ -183,15 +180,17 @@ class HoneyPotTelnetAuthProtocol(AuthenticatingTelnetProtocol):
         if opt == ECHO:
             return True
         elif opt == SGA:
-            return True
+            return False
+            #return True
         else:
             return False
 
 
     def enableRemote(self, opt):
         if opt == LINEMODE:
-            self.transport.requestNegotiation(LINEMODE, MODE + chr(TRAPSIG))
-            return True
+            return False
+            #self.transport.requestNegotiation(LINEMODE, MODE + chr(TRAPSIG))
+            #return True
         elif opt == NAWS:
             return True
         elif opt == SGA:

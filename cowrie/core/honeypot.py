@@ -52,9 +52,18 @@ class HoneyPotCommand(object):
                     self.protocol.terminal.transport.session.id,
                     re.sub('[^A-Za-z0-9]', '_', self.outfile))
                 perm = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-                self.fs.mkfile(self.outfile, 0, 0, 0, stat.S_IFREG | perm)
-                with open(self.safeoutfile, 'a'):
-                    self.fs.update_realfile(self.fs.getfile(self.outfile), self.safeoutfile)
+                try:
+                    self.fs.mkfile(self.outfile, 0, 0, 0, stat.S_IFREG | perm)
+                except fs.FileNotFound:
+                    # The outfile locates at a non-existing directory.
+                    self.protocol.pp.outReceived('-bash: %s: No such file or directory\n' % self.outfile)
+                    self.write = self.write_to_failed
+                    self.outfile = None
+                    self.safeoutfile = None
+
+                else:
+                    with open(self.safeoutfile, 'a'):
+                        self.fs.update_realfile(self.fs.getfile(self.outfile), self.safeoutfile)
             else:
                 self.safeoutfile = p[fs.A_REALFILE]
 
@@ -87,10 +96,16 @@ class HoneyPotCommand(object):
         self.fs.update_size(self.outfile, self.writtenBytes)
 
 
+    def write_to_failed(self, data):
+        """
+        """
+        pass
+
     def start(self):
         """
         """
-        self.call()
+        if self.write != self.write_to_failed:
+            self.call()
         self.exit()
 
 
@@ -168,13 +183,20 @@ class HoneyPotShell(object):
         """
         """
         log.msg(eventid='cowrie.command.input', input=line, format='CMD: %(input)s')
-        line = re.sub('\((.*)\)', '\g<1>', line)
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True)
         tokens = []
         while True:
             try:
                 tok = self.lexer.get_token()
                 # log.msg( "tok: %s" % (repr(tok)) )
+
+                # Ignore parentheses
+                tok_len = len(tok)
+                tok = tok.strip('(')
+                tok = tok.strip(')')
+                if len(tok) != tok_len and tok == '':
+                    continue
+
                 if tok == self.lexer.eof:
                     if len(tokens):
                         self.cmdpending.append((tokens))
