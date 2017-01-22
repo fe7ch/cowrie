@@ -60,7 +60,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
             (self.ttylogPath, time.strftime('%Y%m%d-%H%M%S'),
             transportId, channelId, self.type)
         ttylog.ttylog_open(self.ttylogFile, self.startTime)
-        self.ttylogOpen = True
+        self.ttylogOpen = False
         self.ttylogSize = 0
 
         log.msg(eventid='cowrie.log.open',
