@@ -32,7 +32,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
         self.ttylogPath = cfg.get('honeypot', 'log_path')
         self.downloadPath = cfg.get('honeypot', 'download_path')
 
-        self.redirlogFile = None  # it will be set at core/protocol.py
+        self.redirFiles = set()
 
         try:
             self.bytesReceivedLimit = int(cfg.get('honeypot',
@@ -137,14 +137,14 @@ class LoggingServerProtocol(insults.ServerProtocol):
             try:
                 with open(self.stdinlogFile, 'rb') as f:
                     shasum = hashlib.sha256(f.read()).hexdigest()
-                    shasumfile = self.downloadPath + "/" + shasum
+                    shasumfile = os.path.join(self.downloadPath, shasum)
                     if os.path.exists(shasumfile):
                         os.remove(self.stdinlogFile)
                     else:
                         os.rename(self.stdinlogFile, shasumfile)
                     os.symlink(shasum, self.stdinlogFile)
                 log.msg(eventid='cowrie.session.file_download',
-                        format='Saved stdin contents to %(outfile)s',
+                        format='Saved stdin contents with SHA-256 %(shasum)s to %(outfile)s',
                         url='stdin',
                         outfile=shasumfile,
                         shasum=shasum)
@@ -153,30 +153,31 @@ class LoggingServerProtocol(insults.ServerProtocol):
             finally:
                 self.stdinlogOpen = False
 
-        shasum = ''
-        shasumfile = ''
+        if self.redirFiles:
+            for f in self.redirFiles:
+                try:
+                    if not os.path.exists(f):
+                        continue
 
-        if self.redirlogOpen:
-            try:
-                if os.path.exists(self.redirlogFile):
-                    if os.path.getsize(self.redirlogFile) > 0:
-                        with open(self.redirlogFile, 'rb') as f:
-                            shasum = hashlib.sha256(f.read()).hexdigest()
-                            shasumfile = self.downloadPath + "/" + shasum
-                            if os.path.exists(shasumfile):
-                                os.remove(self.redirlogFile)
-                            else:
-                                os.rename(self.redirlogFile, shasumfile)
-                            os.symlink(shasum, self.redirlogFile)
-                        log.msg(eventid='cowrie.session.file_download',
-                                format='Saved redir contents to %(outfile)s',
-                                url='redir',
-                                outfile=shasumfile,
-                                shasum=shasum)
-            except IOError as e:
-                pass
-            finally:
-                self.redirlogOpen = False
+                    if os.path.getsize(f) == 0:
+                        os.remove(f)
+                        continue
+
+                    shasum = hashlib.sha256(open(f, 'rb').read()).hexdigest()
+                    shasumfile = os.path.join(self.downloadPath, shasum)
+                    if os.path.exists(shasumfile):
+                        os.remove(f)
+                    else:
+                        os.rename(f, shasumfile)
+                    os.symlink(shasum, f)
+                    log.msg(eventid='cowrie.session.file_download',
+                            format='Saved redir contents with SHA-256 %(shasum)s to %(outfile)s',
+                            url='redir',
+                            outfile=shasumfile,
+                            shasum=shasum)
+                except IOError:
+                    pass
+            self.redirFiles.clear()
 
         if self.ttylogOpen:
             # TODO: Add session duration to this entry
