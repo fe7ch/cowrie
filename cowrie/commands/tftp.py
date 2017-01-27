@@ -97,9 +97,6 @@ class command_tftp(HoneyPotCommand):
                     os.symlink(shasum, self.safeoutfile)
 
                     # Update the honeyfs to point to downloaded file
-                    os.symlink(shasum, self.safeoutfile)
-
-                    # Update the honeyfs to point to downloaded file
                     f = self.fs.getfile(self.file_to_get)
                     f[A_REALFILE] = hash_path
 
