@@ -164,6 +164,10 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         os.remove(rf)
                         continue
 
+                    if '_' not in rf:
+                        log.msg('Got hash as filename: %s' % rf)
+                        continue
+
                     with open(rf, 'rb') as f:
                         shasum = hashlib.sha256(f.read()).hexdigest()
                         shasumfile = os.path.join(self.downloadPath, shasum)
