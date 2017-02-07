@@ -103,12 +103,11 @@ class command_tftp(HoneyPotCommand):
             # Link friendly name to hash
             os.symlink(shasum, self.safeoutfile)
 
-            # Update the honeyfs to point to downloaded file
-            f = self.fs.getfile(self.file_to_get)
-            f[A_REALFILE] = hash_path
-
             self.safeoutfile = None
 
+            # Update the honeyfs to point to downloaded file
+            self.fs.update_realfile(self.fs.getfile(self.file_to_get), hash_path)
+            self.exit()
 
 
     def start(self):
