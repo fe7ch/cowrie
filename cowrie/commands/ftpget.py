@@ -132,6 +132,8 @@ Download a file via FTP
         self.fs.mkfile(fakeoutfile, 0, 0, os.path.getsize(hash_path), 33188)
         self.fs.update_realfile(self.fs.getfile(fakeoutfile), hash_path)
 
+        self.safeoutfile = None
+
         self.exit()
 
     def ftp_download(self, safeoutfile):

@@ -107,6 +107,7 @@ class command_tftp(HoneyPotCommand):
             f = self.fs.getfile(self.file_to_get)
             f[A_REALFILE] = hash_path
 
+            self.safeoutfile = None
 
 
 

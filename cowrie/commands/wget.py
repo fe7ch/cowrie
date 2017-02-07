@@ -121,7 +121,7 @@ class command_wget(HoneyPotCommand):
 
         self.download_path = cfg.get('honeypot', 'download_path')
 
-        if not hasattr(self, 'safeoutfile') or os.path.islink(self.safeoutfile):
+        if not hasattr(self, 'safeoutfile'):
             tmp_fname = '%s_%s_%s_%s' % \
                         (time.strftime('%Y%m%d%H%M%S'),
                          self.protocol.getProtoTransport().transportId,
@@ -218,8 +218,7 @@ class command_wget(HoneyPotCommand):
         # Link friendly name to hash
         os.symlink(shasum, self.safeoutfile)
 
-        # FIXME: is this necessary?
-        self.safeoutfile = hash_path
+        self.safeoutfile = None
 
         # Update the honeyfs to point to downloaded file
         self.fs.update_realfile(self.fs.getfile(outfile), hash_path)
