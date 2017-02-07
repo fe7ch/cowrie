@@ -44,8 +44,7 @@ class HoneyPotCommand(object):
             self.outfile = self.fs.resolve_path(str(self.args[(index + 1)]), self.protocol.cwd)
             del self.args[index:]
             p = self.fs.getfile(self.outfile)
-            if not p or not p[fs.A_REALFILE] or p[fs.A_REALFILE].startswith('honeyfs') or not b_append or \
-                    os.path.islink(self.safeoutfile):
+            if not p or not p[fs.A_REALFILE] or p[fs.A_REALFILE].startswith('honeyfs') or not b_append:
                 tmp_fname = '%s-%s-%s-redir_%s' % \
                             (time.strftime('%Y%m%d-%H%M%S'),
                              self.protocol.getProtoTransport().transportId,
