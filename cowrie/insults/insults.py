@@ -32,7 +32,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
         self.ttylogPath = cfg.get('honeypot', 'log_path')
         self.downloadPath = cfg.get('honeypot', 'download_path')
 
-        self.redirFiles = set()
+        self.redirFiles = set()  # it will be filled in cowrie/core/protocol.py
 
         try:
             self.bytesReceivedLimit = int(cfg.get('honeypot',
@@ -166,6 +166,10 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
                     if '_' not in rf:
                         log.msg('Got hash as filename: %s' % rf)
+                        continue
+
+                    if '_http_' in rf:
+                        log.msg('Got safeoutfile from wget/curl/tftp/ftpget, skipping.')
                         continue
 
                     with open(rf, 'rb') as f:
