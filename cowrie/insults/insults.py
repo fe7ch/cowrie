@@ -32,7 +32,12 @@ class LoggingServerProtocol(insults.ServerProtocol):
         self.ttylogPath = cfg.get('honeypot', 'log_path')
         self.downloadPath = cfg.get('honeypot', 'download_path')
 
-        self.redirFiles = set()  # it will be filled in cowrie/core/protocol.py
+        try:
+            self.ttylogEnabled = cfg.getboolean('honeypot', 'ttylog')
+        except:
+            self.ttylogEnabled = True
+
+        self.redirFiles = set()
 
         try:
             self.bytesReceivedLimit = int(cfg.get('honeypot',
@@ -45,27 +50,31 @@ class LoggingServerProtocol(insults.ServerProtocol):
         else:
             self.type = 'i' # Interactive
 
+
     def getSessionId(self):
+        """
+        """
         transportId = self.transport.session.conn.transport.transportId
         channelId = self.transport.session.id
         return (transportId, channelId)
+
 
     def connectionMade(self):
         """
         """
         transportId, channelId = self.getSessionId()
-
         self.startTime = time.time()
-        self.ttylogFile = '%s/tty/%s-%s-%s%s.log' % \
-            (self.ttylogPath, time.strftime('%Y%m%d-%H%M%S'),
-            transportId, channelId, self.type)
-        # ttylog.ttylog_open(self.ttylogFile, self.startTime)
-        self.ttylogOpen = False
-        self.ttylogSize = 0
 
-        # log.msg(eventid='cowrie.log.open',
-        #         ttylog=self.ttylogFile,
-        #         format='Opening TTY Log: %(ttylog)s')
+        if self.ttylogEnabled:
+            self.ttylogFile = '%s/tty/%s-%s-%s%s.log' % \
+                (self.ttylogPath, time.strftime('%Y%m%d-%H%M%S'),
+                transportId, channelId, self.type)
+            ttylog.ttylog_open(self.ttylogFile, self.startTime)
+            self.ttylogOpen = True
+            self.ttylogSize = 0
+            log.msg(eventid='cowrie.log.open',
+                ttylog=self.ttylogFile,
+                format='Opening TTY Log: %(ttylog)s')
 
         self.stdinlogFile = '%s/%s-%s-%s-stdin.log' % \
             (self.downloadPath,
@@ -83,7 +92,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
         """
         Output sent back to user
         """
-        if self.ttylogOpen:
+        if self.ttylogEnabled and self.ttylogOpen:
             ttylog.ttylog_write(self.ttylogFile, len(bytes),
                 ttylog.TYPE_OUTPUT, time.time(), bytes)
             self.ttylogSize += len(bytes)
@@ -106,7 +115,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
         if self.stdinlogOpen:
             with open(self.stdinlogFile, 'ab') as f:
                 f.write(data)
-        elif self.ttylogOpen:
+        elif self.ttylogEnabled and self.ttylogOpen:
             ttylog.ttylog_write(self.ttylogFile, len(data),
                 ttylog.TYPE_INPUT, time.time(), data)
 
@@ -164,12 +173,8 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         os.remove(rf)
                         continue
 
-                    if '_' not in rf:
-                        log.msg('Got hash as filename: %s' % rf)
-                        continue
-
                     if '_http_' in rf:
-                        log.msg('Got safeoutfile from wget/curl/tftp/ftpget, skipping.')
+                        # Got safeoutfile from wget/curl/tftp/ftpget, skipping.
                         continue
 
                     with open(rf, 'rb') as f:
@@ -190,8 +195,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                     pass
             self.redirFiles.clear()
 
-        if self.ttylogOpen:
-            # TODO: Add session duration to this entry
+        if self.ttylogEnabled and self.ttylogOpen:
             log.msg(eventid='cowrie.log.closed',
                     format='Closing TTY Log: %(ttylog)s after %(duration)d seconds',
                     ttylog=self.ttylogFile,
@@ -201,6 +205,8 @@ class LoggingServerProtocol(insults.ServerProtocol):
             self.ttylogOpen = False
 
         insults.ServerProtocol.connectionLost(self, reason)
+
+
 
 class LoggingTelnetServerProtocol(LoggingServerProtocol):
     """

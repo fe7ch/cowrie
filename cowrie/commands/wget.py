@@ -204,10 +204,10 @@ class command_wget(HoneyPotCommand):
             log.msg("Not storing duplicate content " + shasum)
 
         self.protocol.logDispatch(eventid='cowrie.session.file_download',
-            format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-            url=self.url,
-            outfile=hash_path,
-            shasum=shasum )
+                                  format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
+                                  url=self.url,
+                                  outfile=hash_path,
+                                  shasum=shasum)
 
         log.msg(eventid='cowrie.session.file_download',
                 format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
