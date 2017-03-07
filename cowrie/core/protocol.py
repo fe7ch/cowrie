@@ -7,8 +7,10 @@ This module contains ...
 """
 
 import os
+import sys
 import time
 import socket
+import traceback
 
 from twisted.python import failure, log
 from twisted.internet import error
@@ -47,9 +49,13 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
         self.commands = {}
         import cowrie.commands
         for c in cowrie.commands.__all__:
-            module = __import__('cowrie.commands.%s' % (c,),
-                globals(), locals(), ['commands'])
-            self.commands.update(module.commands)
+            try:
+                module = __import__('cowrie.commands.%s' % (c,),
+                    globals(), locals(), ['commands'])
+                self.commands.update(module.commands)
+            except Exception as e:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                log.err("Failed to import command {}: {}: {}".format(c, e, ''.join(traceback.format_exception(exc_type,exc_value,exc_traceback))))
         self.password_input = False
         self.cmdstack = []
 
@@ -134,7 +140,7 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
         self.cfg = None
         self.user = None
         self.environ = None
-        log.msg("honeypot terminal protocol connection lost {}".format(reason))
+        #log.msg("honeypot terminal protocol connection lost {}".format(reason))
 
 
     def txtcmd(self, txt):
@@ -182,7 +188,8 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
         """
         Line Received
         """
-        self.resetTimeout()
+        # Turn idle timeout into time-based timout by commenting out reset
+        #self.resetTimeout()
         if len(self.cmdstack):
             self.cmdstack[-1].lineReceived(line)
 
@@ -288,7 +295,7 @@ class HoneyPotInteractiveProtocol(HoneyPotBaseProtocol, recvline.HistoricRecvLin
         """
         this logs out when connection times out
         """
-        self.terminal.write( 'timed out waiting for input: auto-logout\n' )
+        self.terminal.write( b'timed out waiting for input: auto-logout\n' )
         HoneyPotBaseProtocol.timeoutConnection(self)
 
 
