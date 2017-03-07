@@ -194,6 +194,7 @@ class command_wget(HoneyPotCommand):
 
         with open(self.safeoutfile, 'rb') as f:
             shasum = hashlib.sha256(f.read()).hexdigest()
+            sha1sum = hashlib.sha1(f.read()).hexdigest()
             hash_path = os.path.join(self.download_path, shasum)
 
         # If we have content already, delete temp file
@@ -207,13 +208,15 @@ class command_wget(HoneyPotCommand):
                                   format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                                   url=self.url,
                                   outfile=hash_path,
-                                  shasum=shasum)
+                                  shasum=shasum,
+                                  sha1=sha1sum)
 
         log.msg(eventid='cowrie.session.file_download',
                 format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                 url=self.url,
                 outfile=hash_path,
-                shasum=shasum)
+                shasum=shasum,
+                sha1=sha1sum)
 
         # Link friendly name to hash
         os.symlink(shasum, self.safeoutfile)

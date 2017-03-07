@@ -146,18 +146,24 @@ class LoggingServerProtocol(insults.ServerProtocol):
             try:
                 with open(self.stdinlogFile, 'rb') as f:
                     shasum = hashlib.sha256(f.read()).hexdigest()
-                    shasumfile = os.path.join(self.downloadPath, shasum)
-                    if os.path.exists(shasumfile):
-                        os.remove(self.stdinlogFile)
-                        log.msg("Not storing duplicate content " + shasum)
-                    else:
-                        os.rename(self.stdinlogFile, shasumfile)
-                    os.symlink(shasum, self.stdinlogFile)
+                    sha1sum = hashlib.sha1(f.read()).hexdigest()
+
+                shasumfile = os.path.join(self.downloadPath, shasum)
+
+                if os.path.exists(shasumfile):
+                    os.remove(self.stdinlogFile)
+                    log.msg("Not storing duplicate content " + shasum)
+                else:
+                    os.rename(self.stdinlogFile, shasumfile)
+
+                os.symlink(shasum, self.stdinlogFile)
+
                 log.msg(eventid='cowrie.session.file_download',
                         format='Saved stdin contents with SHA-256 %(shasum)s to %(outfile)s',
                         url='stdin',
                         outfile=shasumfile,
-                        shasum=shasum)
+                        shasum=shasum,
+                        sha1=sha1sum)
             except IOError as e:
                 pass
             finally:
@@ -169,28 +175,34 @@ class LoggingServerProtocol(insults.ServerProtocol):
                     if not os.path.exists(rf):
                         continue
 
+                    if '_http_' in rf:
+                        continue
+
                     if os.path.getsize(rf) == 0:
                         os.remove(rf)
                         continue
 
-                    if '_http_' in rf:
-                        # Got safeoutfile from wget/curl/tftp/ftpget, skipping.
-                        continue
-
                     with open(rf, 'rb') as f:
                         shasum = hashlib.sha256(f.read()).hexdigest()
-                        shasumfile = os.path.join(self.downloadPath, shasum)
-                        if os.path.exists(shasumfile):
-                            os.remove(rf)
-                            log.msg("Not storing duplicate content " + shasum)
-                        else:
-                            os.rename(rf, shasumfile)
-                        os.symlink(shasum, rf)
+                        sha1sum = hashlib.sha1(f.read()).hexdigest()
+
+                    shasumfile = os.path.join(self.downloadPath, shasum)
+
+                    if os.path.exists(shasumfile):
+                        os.remove(rf)
+                        log.msg("Not storing duplicate content " + shasum)
+                    else:
+                        os.rename(rf, shasumfile)
+
+                    os.symlink(shasum, rf)
+
                     log.msg(eventid='cowrie.session.file_download',
                             format='Saved redir contents with SHA-256 %(shasum)s to %(outfile)s',
                             url='redir',
                             outfile=shasumfile,
-                            shasum=shasum)
+                            shasum=shasum,
+                            sha1=sha1sum)
+
                 except IOError:
                     pass
             self.redirFiles.clear()

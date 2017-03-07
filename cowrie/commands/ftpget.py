@@ -14,7 +14,6 @@ from cowrie.core.honeypot import HoneyPotCommand
 from cowrie.core.fs import *
 from twisted.python import log
 
-
 """
 """
 
@@ -24,6 +23,7 @@ commands = {}
 class command_ftpget(HoneyPotCommand):
     """
     """
+
     def help(self):
         self.write("""BusyBox v1.20.2 (2016-06-22 15:12:53 EDT) multi-call binary.
 
@@ -115,6 +115,7 @@ Download a file via FTP
 
         with open(self.safeoutfile, 'rb') as f:
             shasum = hashlib.sha256(f.read()).hexdigest()
+            sha1sum = hashlib.sha1(f.read()).hexdigest()
             hash_path = os.path.join(self.download_path, shasum)
 
         # If we have content already, delete temp file
@@ -125,16 +126,18 @@ Download a file via FTP
             log.msg("Not storing duplicate content " + shasum)
 
         self.protocol.logDispatch(eventid='cowrie.session.file_download',
-            format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-            url=url,
-            outfile=hash_path,
-            shasum=shasum )
+                                  format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
+                                  url=url,
+                                  outfile=hash_path,
+                                  shasum=shasum,
+                                  sha1=sha1sum)
 
         log.msg(eventid='cowrie.session.file_download',
                 format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                 url=url,
                 outfile=hash_path,
-                shasum=shasum)
+                shasum=shasum,
+                sha1=sha1sum)
 
         # Link friendly name to hash
         os.symlink(shasum, self.safeoutfile)

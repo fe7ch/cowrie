@@ -8,6 +8,7 @@ import re
 import os
 import getopt
 import hashlib
+
 try:
     from urllib.parse import urlparse
 except ImportError:
@@ -29,13 +30,12 @@ commands = {}
 
 
 class command_curl(HoneyPotCommand):
-
     def start(self):
         """
         """
         try:
             optlist, args = getopt.getopt(self.args, 'sho:O',
-                [ 'help', 'manual', 'silent' ] )
+                                          ['help', 'manual', 'silent'])
         except getopt.GetoptError as err:
             # TODO: should be 'unknown' instead of 'not recognized'
             self.write(b"curl: {}\n".format(err))
@@ -59,7 +59,7 @@ class command_curl(HoneyPotCommand):
             return
 
         if '://' not in url:
-            url = 'http://'+ url
+            url = 'http://' + url
         urldata = urlparse(url)
 
         outfile = None
@@ -80,7 +80,7 @@ class command_curl(HoneyPotCommand):
                     not self.fs.exists(path) or \
                     not self.fs.isdir(path):
                 self.write(b'curl: %s: Cannot open: No such file or directory\n' % \
-                    (outfile,))
+                           (outfile,))
                 self.exit()
                 return
 
@@ -104,7 +104,6 @@ class command_curl(HoneyPotCommand):
         if self.deferred:
             self.deferred.addCallback(self.success, outfile)
             self.deferred.addErrback(self.error, url)
-
 
     def curl_help(self):
         """
@@ -266,7 +265,6 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
  -q                 If used as the first parameter disables .curlrc\n""")
         self.exit()
 
-
     def download(self, url, fakeoutfile, outputfile, *args, **kwargs):
         """
         """
@@ -293,19 +291,17 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
             contextFactory = ssl.ClientContextFactory()
             contextFactory.method = SSL.SSLv23_METHOD
             reactor.connectSSL(host, port, factory, contextFactory)
-        else: # Can only be http
+        else:  # Can only be http
             self.connection = reactor.connectTCP(
                 host, port, factory, bindAddress=out_addr)
 
         return factory.deferred
-
 
     def handle_CTRL_C(self):
         """
         """
         self.write(b'^C\n')
         self.connection.transport.loseConnection()
-
 
     def success(self, data, outfile):
         """
@@ -316,6 +312,7 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
 
         with open(self.safeoutfile, 'rb') as f:
             shasum = hashlib.sha256(f.read()).hexdigest()
+            sha1sum = hashlib.sha1(f.read()).hexdigest()
             hashPath = os.path.join(self.download_path, shasum)
 
         # If we have content already, delete temp file
@@ -326,16 +323,18 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
             log.msg("Not storing duplicate content " + shasum)
 
         self.protocol.logDispatch(eventid='cowrie.session.file_download',
-            format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-            url=self.url,
-            outfile=hashPath,
-            shasum=shasum )
+                                  format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
+                                  url=self.url,
+                                  outfile=hashPath,
+                                  shasum=shasum,
+                                  sha1=sha1sum)
 
         log.msg(eventid='cowrie.session.file_download',
                 format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                 url=self.url,
                 outfile=hashPath,
-                shasum=shasum)
+                shasum=shasum,
+                sha1=sha1sum)
 
         # Link friendly name to hash
         os.symlink(shasum, self.safeoutfile)
@@ -346,30 +345,31 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
         self.fs.update_realfile(self.fs.getfile(outfile), hashPath)
         self.exit()
 
-
     def error(self, error, url):
         """
         """
-        if hasattr(error, 'getErrorMessage'): # Exceptions
+        if hasattr(error, 'getErrorMessage'):  # Exceptions
             error = error.getErrorMessage()
-        self.write(error+b'\n')
+        self.write(error + b'\n')
         # Real curl also adds this:
         # self.write('%s ERROR 404: Not Found.\n' % \
         #    time.strftime('%Y-%m-%d %T'))
         self.exit()
-commands['/usr/bin/curl'] = command_curl
 
+
+commands['/usr/bin/curl'] = command_curl
 
 
 class HTTPProgressDownloader(client.HTTPDownloader):
     """
     From http://code.activestate.com/recipes/525493/
     """
+
     def __init__(self, curl, fakeoutfile, url, outfile, headers=None):
         """
         """
         client.HTTPDownloader.__init__(self, url, outfile, headers=headers,
-            agent='curl/7.38.0')
+                                       agent='curl/7.38.0')
         self.status = None
         self.curl = curl
         self.fakeoutfile = fakeoutfile
@@ -378,15 +378,13 @@ class HTTPProgressDownloader(client.HTTPDownloader):
         self.proglen = 0
         self.nomore = False
 
-
-    def noPage(self, reason): # Called for non-200 responses
+    def noPage(self, reason):  # Called for non-200 responses
         """
         """
         if self.status == '304':
             client.HTTPDownloader.page(self, '')
         else:
             client.HTTPDownloader.noPage(self, reason)
-
 
     def gotHeaders(self, headers):
         """
@@ -403,9 +401,9 @@ class HTTPProgressDownloader(client.HTTPDownloader):
             self.currentlength = 0.0
 
             if self.curl.limit_size > 0 and \
-                    self.totallength > self.curl.limit_size:
+                            self.totallength > self.curl.limit_size:
                 log.msg('Not saving URL (%s) due to file size limit' % \
-                    (self.curl.url,))
+                        (self.curl.url,))
                 self.fileName = os.path.devnull
                 self.nomore = True
 
@@ -415,7 +413,6 @@ class HTTPProgressDownloader(client.HTTPDownloader):
 
         return client.HTTPDownloader.gotHeaders(self, headers)
 
-
     def pagePart(self, data):
         """
         """
@@ -424,7 +421,7 @@ class HTTPProgressDownloader(client.HTTPDownloader):
 
             # If downloading files of unspecified size, this could happen:
             if not self.nomore and self.curl.limit_size > 0 and \
-                    self.currentlength > self.curl.limit_size:
+                            self.currentlength > self.curl.limit_size:
                 log.msg('File limit reached, not saving any more data!')
                 self.nomore = True
                 self.file.close()
@@ -434,15 +431,14 @@ class HTTPProgressDownloader(client.HTTPDownloader):
             if (time.time() - self.lastupdate) < 0.5:
                 return client.HTTPDownloader.pagePart(self, data)
             if self.totallength:
-                percent = (self.currentlength/self.totallength)*100
+                percent = (self.currentlength / self.totallength) * 100
                 spercent = "%i%%" % (percent,)
             else:
-                spercent = '%dK' % (self.currentlength/1000)
+                spercent = '%dK' % (self.currentlength / 1000)
                 percent = 0
             self.speed = self.currentlength / (time.time() - self.started)
             self.lastupdate = time.time()
         return client.HTTPDownloader.pagePart(self, data)
-
 
     def pageEnd(self):
         """
@@ -452,8 +448,8 @@ class HTTPProgressDownloader(client.HTTPDownloader):
 
         if self.fakeoutfile:
             self.curl.write(b"\r100  %d  100  %d    0     0  %d      0 --:--:-- --:--:-- --:--:-- %d\n" % \
-                (self.currentlength, self.currentlength  , 63673, 65181)
-            )
+                            (self.currentlength, self.currentlength, 63673, 65181)
+                            )
 
             self.curl.fs.mkfile(self.fakeoutfile, 0, 0, self.totallength, 33188)
             self.curl.fs.update_realfile(
@@ -461,7 +457,7 @@ class HTTPProgressDownloader(client.HTTPDownloader):
                 self.curl.safeoutfile)
         else:
             with open(self.curl.safeoutfile, 'r') as f:
-                self.curl.write(f.read()+b'\n')
+                self.curl.write(f.read() + b'\n')
 
         self.curl.fileName = self.fileName
         return client.HTTPDownloader.pageEnd(self)
