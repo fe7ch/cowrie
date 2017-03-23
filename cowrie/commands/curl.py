@@ -312,6 +312,7 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
 
         with open(self.safeoutfile, 'rb') as f:
             shasum = hashlib.sha256(f.read()).hexdigest()
+            f.seek(0, 0)
             sha1sum = hashlib.sha1(f.read()).hexdigest()
             hashPath = os.path.join(self.download_path, shasum)
 

@@ -146,6 +146,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
             try:
                 with open(self.stdinlogFile, 'rb') as f:
                     shasum = hashlib.sha256(f.read()).hexdigest()
+                    f.seek(0, 0)
                     sha1sum = hashlib.sha1(f.read()).hexdigest()
 
                 shasumfile = os.path.join(self.downloadPath, shasum)
@@ -184,6 +185,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
                     with open(rf, 'rb') as f:
                         shasum = hashlib.sha256(f.read()).hexdigest()
+                        f.seek(0, 0)
                         sha1sum = hashlib.sha1(f.read()).hexdigest()
 
                     shasumfile = os.path.join(self.downloadPath, shasum)

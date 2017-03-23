@@ -115,6 +115,7 @@ Download a file via FTP
 
         with open(self.safeoutfile, 'rb') as f:
             shasum = hashlib.sha256(f.read()).hexdigest()
+            f.seek(0, 0)
             sha1sum = hashlib.sha1(f.read()).hexdigest()
             hash_path = os.path.join(self.download_path, shasum)
 
