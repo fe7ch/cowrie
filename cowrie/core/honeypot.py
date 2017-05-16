@@ -184,7 +184,12 @@ class HoneyPotShell(object):
         """
         """
         log.msg(eventid='cowrie.command.input', input=line, format='CMD: %(input)s')
+
+        if line == "/bin/busybox echo -ne \'\\x0181c46036\\x01\' || /bin/busybox echo -ne \'\\x0281c46036\\x01\'":
+            line = "/bin/busybox echo -ne \'\\x0181c46036\\x01\'"
+
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True)
+
         tokens = []
         while True:
             try:
