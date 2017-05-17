@@ -185,8 +185,10 @@ class HoneyPotShell(object):
         """
         log.msg(eventid='cowrie.command.input', input=line, format='CMD: %(input)s')
 
-        if line == "/bin/busybox echo -ne \'\\x0181c46036\\x01\' || /bin/busybox echo -ne \'\\x0281c46036\\x01\'":
-            line = "/bin/busybox echo -ne \'\\x0181c46036\\x01\'"
+        r = re.search('((/bin/busybox )?echo( -ne)? \'[^\']+\') || (/bin/busybox )?echo( -ne)? \'[^\']+\'', line)
+
+        if r and r.group(1):
+            line = r.group(1)
 
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True)
 
