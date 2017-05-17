@@ -185,10 +185,10 @@ class HoneyPotShell(object):
         """
         log.msg(eventid='cowrie.command.input', input=line, format='CMD: %(input)s')
 
-        r = re.search('((/bin/busybox )?echo( -ne)? [\'\"][^\'\"]+[\'\"]) || (/bin/busybox )?echo( -ne)? [\'\"][^\'\"]+[\'\"]', line)
+        r = re.search('.*((/bin/busybox )?echo( -ne)? [\'\"][^\'\"]+[\'\"]) || (/bin/busybox )?echo( -ne)? [\'\"][^\'\"]+[\'\"]$', line)
 
         if r and r.group(1):
-            line = r.group(1)
+            line = line[:line.find(r.group(1))+len(r.group(1))+1]
 
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True)
 
