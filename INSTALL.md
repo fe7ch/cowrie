@@ -80,15 +80,22 @@ $ source cowrie-env/bin/activate
 
 ## Step 5: Install configuration file
 
-Take a look at the configuration file and make changes as desired.  The defaults work well in most cases.
+The configuration for Cowrie is stored in cowrie.cfg.dist and
+cowrie.cfg. Both files are read, where entries from cowrie.cfg take
+precedence. The .dist file can be overwritten on upgrades, cowrie.cfg
+will not be changed. To run with a standard configuration, there
+is no need to change anything. To enable telnet, for example, create
+cowrie.cfg and input only the following:
+
 ```
-$ cp cowrie.cfg.dist cowrie.cfg
+[telnet]
+enabled = true
 ```
 
 ## Step 6: Generate a DSA key
 
 This step should not be necessary, however some versions of twisted
-are not compatible.  To avoid problems in advance, run:
+are not compatible. To avoid problems in advance, run:
 
 ```
 $ cd data
@@ -98,28 +105,25 @@ $ cd ..
 
 ## Step 7: Turning on cowrie
 
-Cowrie is implemented as a module for twisted, but to properly
+Cowrie is implemented as a module for Twisted, but to properly
 import everything the top-level source directory needs to be in
-python's os.path.  This sometimes won't happen correctly, so make
+python's os.path. This sometimes won't happen correctly, so make
 it explicit:
 
 ```
-# or whatever path to the top-level cowrie folder
+# or another path to the top-level cowrie folder
 $ export PYTHONPATH=/home/cowrie/cowrie
 ```
 
-In the absence of a virtual environment, you may run:
+Start Cowrie with the cowrie command. You can add the cowrie/bin directory
+to your path if desired. If the virtual environment is called "cowrie-env"
+it will be automatically activated. Otherwise you will need to activate it
+manually
 
 ```
-$ ./start.sh
-```
-
-When using Python Virtual Environments you can add the name of the
-venv as the first argument or activate it before starting.
-
-```
-$ ./start.sh cowrie-env
-Starting cowrie in the background...
+$ bin/cowrie start
+Activating virtualenv "cowrie-env"
+Starting cowrie with extra arguments [] ...
 ```
 
 ## Step 8: Port redirection (optional)
@@ -132,7 +136,7 @@ $ sudo iptables -t nat -A PREROUTING -p tcp --dport 22 -j REDIRECT --to-port 222
 ```
 
 Note that you should test this rule only from another host; it
-doesn't apply to loopback connections.  Alternatively you can run
+doesn't apply to loopback connections. Alternatively you can run
 authbind to listen as non-root on port 22 directly:
 
 ```
@@ -151,20 +155,20 @@ $ sudo chown cowrie:cowrie /etc/authbind/byport/23
 $ sudo chmod 770 /etc/authbind/byport/23
 ```
 
-* Edit start.sh and modify the AUTHBIND_ENABLED setting
+* Edit bin/cowrie and modify the AUTHBIND_ENABLED setting
 * Change listen_port to 22 in cowrie.cfg
 
 ## Running using Supervisord
 On Debian, put the below in /etc/supervisor/conf.d/cowrie.conf
 ```
 [program:cowrie]
-command=/home/cowrie/cowrie/start.sh cowrie-env
+command=/home/cowrie/cowrie/bin/cowrie start
 directory=/home/cowrie/cowrie/
 user=cowrie
 autorestart=true
 redirect_stderr=true
 ```
-Update the start.sh script, change:
+Update the bin/cowrie script, change:
  ```
  DAEMONIZE=""
  ```
@@ -199,8 +203,8 @@ $ ssh-keygen -t rsa -b 2048 -f ssh_host_rsa_key
 ```
 
 * If you see `twistd: Unknown command: cowrie` there are two
-possibilities.  If there's a python stack trace, it probably means
-there's a missing or broken dependency.  If there's no stack trace,
+possibilities. If there's a python stack trace, it probably means
+there's a missing or broken dependency. If there's no stack trace,
 double check that your PYTHONPATH is set to the source code directory.
 * Default file permissions
 
