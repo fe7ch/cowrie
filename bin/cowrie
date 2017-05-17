@@ -60,11 +60,11 @@ cowrie_status() {
 cowrie_start() {
     # Start Cowrie
     COWRIEARGS="$*"
-    TWISTEDARGS="${DAEMONIZE} ${XARGS} -l log/cowrie.log --umask 0077 --pidfile ${PIDFILE}"
+    TWISTEDARGS="${DAEMONIZE} ${XARGS} -l log/cowrie.log --umask 0022 --pidfile ${PIDFILE}"
 
     if [ $VIRTUALENV_ENABLED = "yes" ]
     then
-        activate_venv "cowrie-env"
+        activate_venv "/home/cowrie/cowrie-env"
     fi
 
     echo "Starting cowrie: [twistd ${TWISTEDARGS} cowrie ${COWRIEARGS}]..."
