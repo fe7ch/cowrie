@@ -189,6 +189,12 @@ class HoneyPotShell(object):
 
         if r and r.group(1):
             line = line[:line.find(r.group(1))+len(r.group(1))+1]
+        else:
+            r = re.search('.*((/bin/busybox )?dd [^|]+) || (/bin/busybox )?cat .*$', line)
+
+            if r and r.group(1):
+
+                line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
 
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True)
 
