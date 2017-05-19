@@ -54,6 +54,7 @@ class command_tftp(HoneyPotCommand):
             self.limit_size = int(cfg.get('honeypot', 'download_limit_size'))
 
         self.download_path = cfg.get('honeypot', 'download_path')
+        self.download_uniq_path = cfg.get('honeypot', 'download_path') + '_uniq'
 
         tmp_fname = '%s_%s_%s_%s' % \
                     (time.strftime('%Y%m%d%H%M%S'),
@@ -85,10 +86,10 @@ class command_tftp(HoneyPotCommand):
                 return
 
             with open(self.safeoutfile, 'rb') as f:
-                shasum = hashlib.sha256(f.read()).hexdigest()
-                f.seek(0, 0)
-                sha1sum = hashlib.sha1(f.read()).hexdigest()
-                hash_path = os.path.join(self.download_path, shasum)
+                d = f.read()
+                shasum = hashlib.sha256(d).hexdigest()
+                sha1sum = hashlib.sha1(d).hexdigest()
+                hash_path = os.path.join(self.download_uniq_path, shasum)
 
             # If we have content already, delete temp file
             if not os.path.exists(hash_path):
@@ -114,7 +115,7 @@ class command_tftp(HoneyPotCommand):
                     sha1=sha1sum)
 
             # Link friendly name to hash
-            os.symlink(shasum, self.safeoutfile)
+            os.symlink(hash_path, self.safeoutfile)
 
             self.safeoutfile = None
 

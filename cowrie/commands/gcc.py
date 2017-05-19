@@ -181,7 +181,8 @@ gcc version %s (Debian %s-5)""" % (version, version_short, version_short, versio
                 data = data + command_gcc.RANDOM_DATA
 
         # Write random data
-        with open(safeoutfile, 'wb') as f: f.write(data)
+        with open(safeoutfile, 'wb') as f:
+            f.write(data)
 
         # Output file
         outfile = self.fs.resolve_path(outfile, self.protocol.cwd)
