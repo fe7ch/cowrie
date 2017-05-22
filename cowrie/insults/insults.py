@@ -184,9 +184,9 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         continue
 
                     with open(rf, 'rb') as f:
-                        shasum = hashlib.sha256(f.read()).hexdigest()
-                        f.seek(0, 0)
-                        sha1sum = hashlib.sha1(f.read()).hexdigest()
+                        d = f.read()
+                        shasum = hashlib.sha256(d).hexdigest()
+                        sha1sum = hashlib.sha1(d).hexdigest()
 
                     shasumfile = os.path.join(self.downloadPath, shasum)
 
@@ -200,7 +200,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
                     log.msg(eventid='cowrie.session.file_download',
                             format='Saved redir contents with SHA-256 %(shasum)s to %(outfile)s',
-                            url='redir',
+                            url=rf[rf.find('redir_')+len('redir_'):],
                             outfile=shasumfile,
                             shasum=shasum,
                             sha1=sha1sum)
