@@ -31,6 +31,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         self.ttylogPath = cfg.get('honeypot', 'log_path')
         self.downloadPath = cfg.get('honeypot', 'download_path')
+        self.downloadPathUniq = cfg.get('honeypot', 'download_path') + '_uniq'
 
         try:
             self.ttylogEnabled = cfg.getboolean('honeypot', 'ttylog')
@@ -149,7 +150,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                     f.seek(0, 0)
                     sha1sum = hashlib.sha1(f.read()).hexdigest()
 
-                shasumfile = os.path.join(self.downloadPath, shasum)
+                shasumfile = os.path.join(self.downloadPathUniq, shasum)
 
                 if os.path.exists(shasumfile):
                     os.remove(self.stdinlogFile)
@@ -188,7 +189,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         shasum = hashlib.sha256(d).hexdigest()
                         sha1sum = hashlib.sha1(d).hexdigest()
 
-                    shasumfile = os.path.join(self.downloadPath, shasum)
+                    shasumfile = os.path.join(self.downloadPathUniq, shasum)
 
                     if os.path.exists(shasumfile):
                         os.remove(rf)
