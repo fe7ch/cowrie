@@ -331,13 +331,6 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
                                   shasum=shasum,
                                   sha1=sha1sum)
 
-        log.msg(eventid='cowrie.session.file_download',
-                format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-                url=self.url,
-                outfile=hashPath,
-                shasum=shasum,
-                sha1=sha1sum)
-
         # Link friendly name to hash
         os.symlink(hashPath, self.safeoutfile)
 
@@ -345,6 +338,8 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
 
         # Update the honeyfs to point to downloaded file
         self.fs.update_realfile(self.fs.getfile(outfile), hashPath)
+        self.fs.chown(outfile, self.protocol.user.uid, self.protocol.user.gid)
+
         self.exit()
 
     def error(self, error, url):

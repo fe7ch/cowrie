@@ -135,13 +135,6 @@ Download a file via FTP
                                   shasum=shasum,
                                   sha1=sha1sum)
 
-        log.msg(eventid='cowrie.session.file_download',
-                format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-                url=url,
-                outfile=hash_path,
-                shasum=shasum,
-                sha1=sha1sum)
-
         # Link friendly name to hash
         os.symlink(hash_path, self.safeoutfile)
 
@@ -149,6 +142,8 @@ Download a file via FTP
 
         # Update the honeyfs to point to downloaded file
         self.fs.update_realfile(self.fs.getfile(fakeoutfile), hash_path)
+        self.fs.chown(fakeoutfile, self.protocol.user.uid, self.protocol.user.gid)
+
         self.exit()
 
     def ftp_download(self, safeoutfile):

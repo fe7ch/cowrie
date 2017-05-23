@@ -213,13 +213,6 @@ class command_wget(HoneyPotCommand):
                                   shasum=shasum,
                                   sha1=sha1sum)
 
-        log.msg(eventid='cowrie.session.file_download',
-                format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-                url=self.url,
-                outfile=hash_path,
-                shasum=shasum,
-                sha1=sha1sum)
-
         # Link friendly name to hash
         os.symlink(hash_path, self.safeoutfile)
 
@@ -227,6 +220,7 @@ class command_wget(HoneyPotCommand):
 
         # Update the honeyfs to point to downloaded file
         self.fs.update_realfile(self.fs.getfile(outfile), hash_path)
+        self.fs.chown(outfile, self.protocol.user.uid, self.protocol.user.gid)
         self.exit()
 
 
