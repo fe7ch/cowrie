@@ -387,7 +387,7 @@ class HoneyPotFilesystem(object):
                 shasum = hashlib.sha256(d).hexdigest()
                 sha1sum = hashlib.sha1(d).hexdigest()
 
-            shasumfile = os.path.join(self.cfg.get('honeypot', 'download_path') + '_uniq', shasum)
+            shasumfile = os.path.join(self.cfg.get('honeypot', 'download_path_uniq'), shasum)
 
             if os.path.exists(shasumfile):
                 os.remove(self.tempfiles[fd])
@@ -397,7 +397,6 @@ class HoneyPotFilesystem(object):
 
             os.symlink(shasum, self.tempfiles[fd])
 
-            self.update_realfile(self.getfile(self.filenames[fd]), shasumfile)
             
             log.msg(format='SFTP Uploaded file \"%(filename)s\" to %(outfile)s',
                     eventid='cowrie.session.file_upload',
@@ -406,8 +405,11 @@ class HoneyPotFilesystem(object):
                     outfile=shasumfile,
                     shasum=shasum,
                     sha1=sha1sum)
+            self.update_realfile(self.getfile(self.filenames[fd]), shasumfile)
+
             del self.tempfiles[fd]
             del self.filenames[fd]
+
         return os.close(fd)
 
 
