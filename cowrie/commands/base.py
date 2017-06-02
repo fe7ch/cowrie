@@ -503,6 +503,8 @@ class command_sh(HoneyPotCommand):
         if len(self.args) and self.args[0].strip() == '-c':
             line = ' '.join(self.args)
             cmd = self.args[1]
+            if (cmd[0] == '\'' and cmd[-1] == '\'') or (cmd[0] == '"' and cmd[-1] == '"'):
+                cmd = cmd[1:-1]
             cmdclass = self.protocol.getCommand(cmd,
                                                 self.environ['PATH'].split(':'))
             if cmdclass:
