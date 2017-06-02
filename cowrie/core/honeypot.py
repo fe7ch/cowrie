@@ -30,6 +30,8 @@ class HoneyPotCommand(object):
         self.input_data = None
         self.write = self.protocol.pp.outReceived
         self.errorWrite = self.protocol.pp.errReceived
+        self.download_path = self.protocol.cfg.get('honeypot', 'download_path')
+        self.download_path_uniq = self.protocol.cfg.get('honeypot', 'download_path_uniq')
         # MS-DOS style redirect handling, inside the command
         # TODO: handle >>, 2>, etc
         if '>' in self.args or '>>' in self.args:

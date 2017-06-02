@@ -92,8 +92,6 @@ Download a file via FTP
 
         cfg = self.protocol.cfg
         url = 'ftp://%s/%s' % (self.host, self.remote_path)
-        self.download_path = cfg.get('honeypot', 'download_path')
-        self.download_path_uniq = cfg.get('honeypot', 'download_path_uniq')
 
         tmp_fname = '%s_%s_%s_%s' % \
                     (time.strftime('%Y%m%d%H%M%S'),
