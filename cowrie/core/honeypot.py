@@ -187,6 +187,8 @@ class HoneyPotShell(object):
         """
         log.msg(eventid='cowrie.command.input', input=line, format='CMD: %(input)s')
 
+        line = re.sub('([012]>/dev/null)', '', line)
+
         r = re.search('.*((/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]) \|\| (/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]$', line)
 
         if r and r.group(1):
