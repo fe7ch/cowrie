@@ -16,10 +16,8 @@ class command_python(HoneyPotCommand):
     """
     """
     def version(self):
-        ver = 'Python 2.7.11+'
+        ver = 'Python 2.7.6'
         self.write(ver + '\n')
-        self.exit()
-
 
     def help(self):
         output = (
@@ -97,9 +95,11 @@ class command_python(HoneyPotCommand):
             elif o in '-h':
                 self.help()
                 self.exit()
+                return
             elif o in '--version':
                 self.version()
                 self.exit()
+                return
 
         for value in args:
             sourcefile = self.fs.resolve_path(value, self.protocol.cwd)
