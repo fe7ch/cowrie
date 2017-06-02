@@ -90,7 +90,6 @@ Download a file via FTP
             self.exit()
             return
 
-        cfg = self.protocol.cfg
         url = 'ftp://%s/%s' % (self.host, self.remote_path)
 
         tmp_fname = '%s_%s_%s_%s' % \
