@@ -55,7 +55,7 @@ class HoneyPotCommand(object):
                              self.protocol.getProtoTransport().transportId,
                              self.protocol.terminal.transport.session.id,
                              re.sub('[^A-Za-z0-9]', '_', self.outfile))
-                self.safeoutfile = os.path.join(self.protocol.cfg.get('honeypot', 'download_path'), tmp_fname)
+                self.safeoutfile = os.path.join(self.download_path, tmp_fname)
                 perm = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
                 try:
                     self.fs.mkfile(self.outfile, 0, 0, 0, stat.S_IFREG | perm)
