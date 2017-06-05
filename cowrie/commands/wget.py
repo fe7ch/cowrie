@@ -225,13 +225,13 @@ class command_wget(HoneyPotCommand):
 
         if hasattr(error, 'getErrorMessage'): # exceptions
             errorMessage = error.getErrorMessage()
-            self.write(errorMessage +'\n')
+            self.errorWrite(errorMessage + '\n')
             # Real wget also adds this:
-        if hasattr(error, 'webStatus') and hasattr(error,'webMessage'): # exceptions
+        if hasattr(error, 'webStatus') and hasattr(error, 'webMessage'):  # exceptions
             dateWithError = '{} ERROR '.format(time.strftime('%Y-%m-%d %T'))
-            self.write(dateWithError + str(error.webStatus) + ': ' + error.webMessage + '\n')
+            self.errorWrite(dateWithError + str(error.webStatus) + ': ' + error.webMessage + '\n')
         else:
-            self.write('{} ERROR 404: Not Found.\n'.format(time.strftime('%Y-%m-%d %T')))
+            self.errorWrite('{} ERROR 404: Not Found.\n'.format(time.strftime('%Y-%m-%d %T')))
         self.exit()
 
 commands['/usr/bin/wget'] = command_wget
