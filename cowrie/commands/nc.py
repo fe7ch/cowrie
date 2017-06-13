@@ -1,14 +1,36 @@
 import getopt
 import re
 import socket
+import struct
 
 from cowrie.core.honeypot import HoneyPotCommand
 
 commands = {}
 
 
-class command_nc(HoneyPotCommand):
+def makeMask(n):
+    """return a mask of n bits as a long integer"""
+    return (2L << n - 1) - 1
 
+
+def dottedQuadToNum(ip):
+    """convert decimal dotted quad string to long integer"""
+    return struct.unpack('L', socket.inet_aton(ip))[0]
+
+
+def networkMask(ip, bits):
+    """Convert a network address to a long integer"""
+    return dottedQuadToNum(ip) & makeMask(bits)
+
+
+def addressInNetwork(ip, net):
+    """Is an address in a network"""
+    return ip & net == net
+
+local_networks = ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']
+
+
+class command_nc(HoneyPotCommand):
     def help(self):
         """
         """
@@ -39,9 +61,15 @@ usage: nc [-46bCDdhjklnrStUuvZz] [-I length] [-i interval] [-O length]
         host = args[0]
         port = args[1]
 
+        for net in local_networks:
+            if addressInNetwork(host, net):
+                self.exit()
+                return
+
         if not re.match('[\d]+', port):
             self.errorWrite('nc: port number invalid: {}\n'.format(port))
             self.exit()
+            return
 
         out_addr = None
         if self.protocol.cfg.has_option('honeypot', 'out_addr'):
@@ -81,5 +109,6 @@ usage: nc [-46bCDdhjklnrStUuvZz] [-I length] [-i interval] [-O length]
     def handle_CTRL_D(self):
 
         self.s.close()
+
 
 commands['/bin/nc'] = command_nc
