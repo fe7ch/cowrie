@@ -27,7 +27,7 @@ def addressInNetwork(ip, net):
     """Is an address in a network"""
     return ip & net == net
 
-local_networks = ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16']
+local_networks = [networkMask('10.0.0.0', 8), networkMask('172.16.0.0', 12), networkMask('192.168.0.0', 16)]
 
 
 class command_nc(HoneyPotCommand):
@@ -61,8 +61,10 @@ usage: nc [-46bCDdhjklnrStUuvZz] [-I length] [-i interval] [-O length]
         host = args[0]
         port = args[1]
 
+        address = dottedQuadToNum(host)
+
         for net in local_networks:
-            if addressInNetwork(host, net):
+            if addressInNetwork(address, net):
                 self.exit()
                 return
 
@@ -99,16 +101,19 @@ usage: nc [-46bCDdhjklnrStUuvZz] [-I length] [-i interval] [-O length]
 
     def lineReceived(self, line):
 
-        self.s.send(line)
+        if hasattr(self, 's'):
+            self.s.send(line)
 
     def handle_CTRL_C(self):
 
         self.write('^C\n')
-        self.s.close()
+        if hasattr(self, 's'):
+            self.s.close()
 
     def handle_CTRL_D(self):
 
-        self.s.close()
+        if hasattr(self, 's'):
+            self.s.close()
 
 
 commands['/bin/nc'] = command_nc
