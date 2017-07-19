@@ -107,7 +107,7 @@ class command_tftp(HoneyPotCommand):
                                       sha1=sha1sum)
 
             # Link friendly name to hash
-            os.symlink(hash_path, self.safeoutfile)
+            # os.symlink(hash_path, self.safeoutfile)
 
             self.safeoutfile = None
 

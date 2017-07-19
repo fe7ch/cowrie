@@ -166,6 +166,7 @@ class command_printf(HoneyPotCommand):
 
 
 commands['printf'] = command_printf
+commands['/usr/bin/printf'] = command_printf
 
 
 class command_exit(HoneyPotCommand):

@@ -94,6 +94,12 @@ txtcmds_path = txtcmds
 ttylog = true
 
 
+# Interactive timeout determines when logged in sessions are
+# terminated for being idle. In seconds.
+# (default: 180)
+interactive_timeout = 180
+
+
 
 # ============================================================================
 # Network Specific Options
@@ -266,14 +272,14 @@ forward_redirect = false
 # forward_redirect_<portnumber> = <redirect ip>:<redirect port>
 
 # Redirect http/https
-forward_redirect_80 = 127.0.0.1:8000
-forward_redirect_443 = 127.0.0.1:8443
+# forward_redirect_80 = 127.0.0.1:8000
+# forward_redirect_443 = 127.0.0.1:8443
 
 # To record SMTP traffic, install an SMTP honeypoint.
 # (e.g https://github.com/awhitehatter/mailoney), run
 # python mailoney.py -s yahoo.com -t schizo_open_relay -p 12525
-forward_redirect_25 = 127.0.0.1:12525
-forward_redirect_587 = 127.0.0.1:12525
+# forward_redirect_25 = 127.0.0.1:12525
+# forward_redirect_587 = 127.0.0.1:12525
 
 
 
@@ -479,6 +485,15 @@ logfile = log/cowrie.json
 #[output_virustotal]
 #api_key = 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
 #
+
+# Cuckoo output module
+#[output_cuckoo]
+# no slash at the end
+#url_base = http://127.0.0.1:8090
+#user = user
+#passwd = passwd
+# force will upload duplicated files to cuckoo
+#force = 0
 
 #[output_slack]
 # This will produce a _lot_ of messages - you have been warned....

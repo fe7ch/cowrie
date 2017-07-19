@@ -5,9 +5,10 @@ etc/ssh_host_dsa_key.pub
 etc/ssh_host_rsa_key
 etc/ssh_host_rsa_key.pub
 var/log/cowrie/*
-dl/*
-log/*
-log/tty/*
+cowrie.egg-info/
+dl/
+build/
+log/
 __pycache__/
 *.py[cod]
 *env/

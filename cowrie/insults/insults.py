@@ -157,8 +157,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                     log.msg("Not storing duplicate content " + shasum)
                 else:
                     os.rename(self.stdinlogFile, shasumfile)
-
-                os.symlink(shasum, self.stdinlogFile)
+                    # os.symlink(shasum, self.stdinlogFile)
 
                 log.msg(eventid='cowrie.session.file_download',
                         format='Saved stdin contents with SHA-256 %(shasum)s to %(outfile)s',
@@ -166,6 +165,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         outfile=shasumfile,
                         shasum=shasum,
                         sha1=sha1sum)
+
             except IOError as e:
                 pass
             finally:
@@ -204,8 +204,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         log.msg("Not storing duplicate content " + shasum)
                     else:
                         os.rename(rf, shasumfile)
-
-                    os.symlink(shasum, rf)
+                        # os.symlink(shasum, rf)
 
                     log.msg(eventid='cowrie.session.file_download',
                             format='Saved redir contents with SHA-256 %(shasum)s to %(outfile)s',
@@ -219,16 +218,17 @@ class LoggingServerProtocol(insults.ServerProtocol):
             self.redirFiles.clear()
 
         if self.ttylogEnabled and self.ttylogOpen:
+
             log.msg(eventid='cowrie.log.closed',
                     format='Closing TTY Log: %(ttylog)s after %(duration)d seconds',
                     ttylog=self.ttylogFile,
                     size=self.ttylogSize,
                     duration=time.time()-self.startTime)
+
             ttylog.ttylog_close(self.ttylogFile, time.time())
             self.ttylogOpen = False
 
         insults.ServerProtocol.connectionLost(self, reason)
-
 
 
 class LoggingTelnetServerProtocol(LoggingServerProtocol):

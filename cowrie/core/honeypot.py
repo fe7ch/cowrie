@@ -146,6 +146,8 @@ class HoneyPotCommand(object):
         """
         log.msg('QUEUED INPUT: {}'.format(line))
         # FIXME: naive command parsing, see lineReceived below
+        line = b"".join(line)
+        line = line.decode("utf-8")
         self.protocol.cmdstack[0].cmdpending.append(shlex.split(line))
 
 

@@ -16,8 +16,9 @@ class command_python(HoneyPotCommand):
     """
     """
     def version(self):
-        ver = 'Python 2.7.6'
+        ver = 'Python 2.7.11+'
         self.write(ver + '\n')
+
 
     def help(self):
         output = (
