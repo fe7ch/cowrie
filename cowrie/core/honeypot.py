@@ -205,6 +205,9 @@ class HoneyPotShell(object):
 
                 line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
 
+        line = b"".join(line)
+        line = line.decode("utf-8")
+        
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True)
 
         tokens = []
