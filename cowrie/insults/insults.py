@@ -5,6 +5,8 @@
 This module contains ...
 """
 
+from __future__ import division, absolute_import
+
 import os
 import time
 import hashlib
@@ -180,7 +182,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                     url = rp[1]
                 else:
                     url = rf[rf.find('redir_')+len('redir_'):]
-                    
+
                 try:
                     if not os.path.exists(rf):
                         continue
