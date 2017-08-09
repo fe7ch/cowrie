@@ -200,12 +200,19 @@ class HoneyPotShell(object):
 
         if r and r.group(1):
             line = line[:line.find(r.group(1))+len(r.group(1))+1]
-        else:
-            r = re.search('.*((/bin/busybox )?dd [^|]+) \|\| (/bin/busybox )?cat .*$', line)
 
-            if r and r.group(1):
+        r = re.search('.*((/bin/busybox )?dd [^|]+) \|\| (/bin/busybox )?cat .*$', line)
 
-                line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
+        if r and r.group(1):
+
+            line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
+
+        r = re.search('.*((/bin/busybox )?cat [^|]+) \|\| (while .*)$', line)
+
+        if r and r.group(1):
+
+            line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
+
 
         line = b"".join(line)
         line = line.decode("utf-8")
