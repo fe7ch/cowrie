@@ -208,6 +208,9 @@ class HoneyPotShell(object):
 
         line = line.replace('cat /lib/libdl.so* || cat /lib/librt.so* || cat /bin/cat || cat /sbin/ifconfig', 'cat /bin/cat')
 
+        line = line.replace('(python -V 2>/dev/null && echo python && python -V) || (/usr/local/bin/python -V 2>/dev/null && echo /usr/local/bin/python && /usr/local/bin/python -V)',
+                            '(python -V && echo python && python -V')
+
         r = re.search('.*((/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]) \|\| (/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]$', line)
 
         if r and r.group(1):
