@@ -200,16 +200,16 @@ class HoneyPotShell(object):
         """
         log.msg(eventid='cowrie.command.input', input=line, format='CMD: %(input)s')
 
+        line = line.replace('(python -V 2>/dev/null && echo python && python -V) || (/usr/local/bin/python -V 2>/dev/null && echo /usr/local/bin/python && /usr/local/bin/python -V)',
+                            '(python -V && echo python && python -V')
+
+        line = line.replace('2>/dev/null sh -c \'cat /lib/libdl.so* || cat /lib/librt.so* || cat /bin/cat || cat /sbin/ifconfig\'', 'cat /bin/cat')
+
         # 1>/dev/null 2>/dev/null
         line = re.sub('([012]>/dev/null)', '', line)
 
         # echo 1 || echo 0
         line = re.sub('(echo [\d]+) \|\| echo [\d]+', '\g<1>', line)
-
-        line = line.replace('cat /lib/libdl.so* || cat /lib/librt.so* || cat /bin/cat || cat /sbin/ifconfig', 'cat /bin/cat')
-
-        line = line.replace('(python -V 2>/dev/null && echo python && python -V) || (/usr/local/bin/python -V 2>/dev/null && echo /usr/local/bin/python && /usr/local/bin/python -V)',
-                            '(python -V && echo python && python -V')
 
         r = re.search('.*((/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]) \|\| (/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]$', line)
 
