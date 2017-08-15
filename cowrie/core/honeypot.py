@@ -200,7 +200,13 @@ class HoneyPotShell(object):
         """
         log.msg(eventid='cowrie.command.input', input=line, format='CMD: %(input)s')
 
+        # 1>/dev/null 2>/dev/null
         line = re.sub('([012]>/dev/null)', '', line)
+
+        # echo 1 || echo 0
+        line = re.sub('(echo [\d]+) \|\| echo [\d]+', '\g<1>', line)
+
+        line = line.replace('cat /lib/libdl.so* || cat /lib/librt.so* || cat /bin/cat || cat /sbin/ifconfig', 'cat /bin/cat')
 
         r = re.search('.*((/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]) \|\| (/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]$', line)
 
@@ -218,7 +224,6 @@ class HoneyPotShell(object):
         if r and r.group(1):
 
             line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
-
 
         line = b"".join(line)
         line = line.decode("utf-8")
