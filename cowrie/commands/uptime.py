@@ -4,9 +4,9 @@
 from __future__ import division, absolute_import
 
 import time
+import random
 
 from cowrie.core.honeypot import HoneyPotCommand
-from cowrie.core import utils
 
 commands = {}
 
@@ -17,8 +17,12 @@ class command_uptime(HoneyPotCommand):
     def call(self):
         """
         """
-        self.write('%s  up %s,  1 user,  load average: 0.00, 0.00, 0.00\n' % \
-            (time.strftime('%H:%M:%S'), utils.uptime(self.protocol.uptime())))
+
+        upt = '%d days, %d mins' % (random.randrange(1, 30), random.randrange(1, 60))
+
+        self.write('%s  up %s,  1 user,  load average: 0.0%d, 0.0%d, 0.0%d\n' %
+                   (time.strftime('%H:%M:%S'), upt, random.randrange(0, 9), random.randrange(0, 9),
+                    random.randrange(0, 9)))
 
 commands['/usr/bin/uptime'] = command_uptime
 
