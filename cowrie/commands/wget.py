@@ -269,7 +269,7 @@ class HTTPProgressDownloader(client.HTTPDownloader):
         """
         if self.status == '200':
             if self.quiet == False:
-                self.wget.write('200 OK\n')
+                self.wget.errorWrite('200 OK\n')
             if 'content-length' in headers:
                 self.totallength = int(headers['content-length'][0])
             else:
@@ -282,20 +282,20 @@ class HTTPProgressDownloader(client.HTTPDownloader):
 
             if self.totallength > 0:
                 if self.quiet == False:
-                    self.wget.write('Length: %d (%s) [%s]\n' % \
+                    self.wget.errorWrite('Length: %d (%s) [%s]\n' % \
                         (self.totallength,
                         sizeof_fmt(self.totallength),
                         self.contenttype))
             else:
                 if self.quiet == False:
-                    self.wget.write('Length: unspecified [{}]\n'.format(self.contenttype))
+                    self.wget.errorWrite('Length: unspecified [{}]\n'.format(self.contenttype))
             if self.wget.limit_size > 0 and \
                     self.totallength > self.wget.limit_size:
                 log.msg( 'Not saving URL ({}) due to file size limit'.format(self.wget.url))
                 self.fileName = os.path.devnull
                 self.nomore = True
             if self.quiet == False:
-                self.wget.write('Saving to: `{}\'\n\n'.format(self.fakeoutfile))
+                self.wget.errorWrite('Saving to: `{}\'\n\n'.format(self.fakeoutfile))
 
         return client.HTTPDownloader.gotHeaders(self, headers)
 
@@ -332,7 +332,7 @@ class HTTPProgressDownloader(client.HTTPDownloader):
                 self.speed / 1000,
                 tdiff(eta))
             if self.quiet == False:
-                self.wget.write(s.ljust(self.proglen))
+                self.wget.errorWrite(s.ljust(self.proglen))
             self.proglen = len(s)
             self.lastupdate = time.time()
         return client.HTTPDownloader.pagePart(self, data)
@@ -344,12 +344,12 @@ class HTTPProgressDownloader(client.HTTPDownloader):
         if self.totallength != 0 and self.currentlength != self.totallength:
             return client.HTTPDownloader.pageEnd(self)
         if self.quiet == False:
-            self.wget.write('\r100%%[%s] %s %dK/s' % \
+            self.wget.errorWrite('\r100%%[%s] %s %dK/s' % \
                 ('%s>' % (38 * '='),
                 splitthousands(str(int(self.totallength))).ljust(12),
                 self.speed / 1000))
-            self.wget.write('\n\n')
-            self.wget.write(
+            self.wget.errorWrite('\n\n')
+            self.wget.errorWrite(
                 '%s (%d KB/s) - `%s\' saved [%d/%d]\n\n' % \
                 (time.strftime('%Y-%m-%d %H:%M:%S'),
                 self.speed / 1000,
