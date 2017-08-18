@@ -78,10 +78,12 @@ class command_busybox(HoneyPotCommand):
             # so lets just call the command in question
 
             if hasattr(self, 'outfile') and self.outfile:
-                self.args.append('>')
-                self.args.append(self.outfile)
+                if self.b_append:
+                    self.args.append('>>')
+                else:
+                    self.args.append('>')
 
-                print('new args', self.args)
+                self.args.append(self.outfile)
 
             # self.protocol.pp.insert_command(command)
             self.protocol.call_command(command, cmdclass, *self.args[1:])

@@ -44,14 +44,14 @@ class HoneyPotCommand(object):
             self.write = self.write_to_file
             if '>>' in self.args:
                 index = self.args.index('>>')
-                b_append = True
+                self.b_append = True
             else:
                 index = self.args.index('>')
-                b_append = False
+                self.b_append = False
             self.outfile = self.fs.resolve_path(str(self.args[(index + 1)]), self.protocol.cwd)
             del self.args[index:]
             p = self.fs.getfile(self.outfile)
-            if not p or not p[fs.A_REALFILE] or p[fs.A_REALFILE].startswith('honeyfs') or not b_append:
+            if not p or not p[fs.A_REALFILE] or p[fs.A_REALFILE].startswith('honeyfs') or not self.b_append:
                 tmp_fname = '%s-%s-%s-redir_%s' % \
                             (time.strftime('%Y%m%d-%H%M%S'),
                              self.protocol.getProtoTransport().transportId,
