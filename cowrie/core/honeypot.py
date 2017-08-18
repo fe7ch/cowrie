@@ -222,11 +222,7 @@ class HoneyPotShell(object):
 
             line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
 
-        r = re.search('.*((/bin/busybox )?cat [^|]+) \|\| (while .*)$', line)
-
-        if r and r.group(1):
-
-            line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
+        line = re.sub('(\|\| while read [a-z]+; do (/bin/busybox )?echo \$[a-z]+; done < [a-zA-Z0-9/.\-]+)', '', line)
 
         line = b"".join(line)
         line = line.decode("utf-8")
