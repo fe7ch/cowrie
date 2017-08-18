@@ -205,15 +205,11 @@ class command_exit(HoneyPotCommand):
     def call(self):
         """
         """
-        stat = failure.Failure(error.ProcessDone(status=""))
-        self.protocol.terminal.transport.processEnded(stat)
+        # exit current shell
+        self.protocol.cmdstack.pop()
+
         return
 
-
-    def exit(self):
-        """
-        """
-        pass
 commands['exit'] = command_exit
 commands['logout'] = command_exit
 
