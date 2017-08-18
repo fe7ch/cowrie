@@ -146,14 +146,14 @@ class command_wget(HoneyPotCommand):
                 self.exit()
                 return None
         except:
-            self.write('%s: Unsupported scheme.\n' % (url,))
+            self.errorWrite('%s: Unsupported scheme.\n' % (url,))
             self.exit()
             return None
 
         if self.quiet == False:
-            self.write('--%s--  %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), url))
-            self.write('Connecting to %s:%d... connected.\n' % (host, port))
-            self.write('HTTP request sent, awaiting response... ')
+            self.errorWrite('--%s--  %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), url))
+            self.errorWrite('Connecting to %s:%d... connected.\n' % (host, port))
+            self.errorWrite('HTTP request sent, awaiting response... ')
 
         factory = HTTPProgressDownloader(
             self, fakeoutfile, url, outputfile, *args, **kwargs)
