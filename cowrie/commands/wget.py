@@ -22,6 +22,7 @@ from cowrie.core.fs import *
 
 commands = {}
 
+
 def tdiff(seconds):
     """
     """
@@ -50,14 +51,12 @@ def sizeof_fmt(num):
         num /= 1024.0
 
 
-
 # Luciano Ramalho @ http://code.activestate.com/recipes/498181/
 def splitthousands( s, sep=','):
     """
     """
     if len(s) <= 3: return s
     return splitthousands(s[:-3], sep) + sep + s[-3:]
-
 
 
 class command_wget(HoneyPotCommand):
@@ -69,16 +68,16 @@ class command_wget(HoneyPotCommand):
         try:
             optlist, args = getopt.getopt(self.args, 'cqO:P:', 'header=')
         except getopt.GetoptError as err:
-            self.write('Unrecognized option\n')
+            self.errorWrite('Unrecognized option\n')
             self.exit()
             return
 
         if len(args):
             url = args[0].strip()
         else:
-            self.write('wget: missing URL\n')
-            self.write('Usage: wget [OPTION]... [URL]...\n\n')
-            self.write('Try `wget --help\' for more options.\n')
+            self.errorWrite('wget: missing URL\n')
+            self.errorWrite('Usage: wget [OPTION]... [URL]...\n\n')
+            self.errorWrite('Try `wget --help\' for more options.\n')
             self.exit()
             return
 
@@ -103,11 +102,8 @@ class command_wget(HoneyPotCommand):
 
         outfile = self.fs.resolve_path(outfile, self.protocol.cwd)
         path = os.path.dirname(outfile)
-        if not path or \
-                not self.fs.exists(path) or \
-                not self.fs.isdir(path):
-            self.write('wget: %s: Cannot open: No such file or directory\n' % \
-                outfile)
+        if not path or not self.fs.exists(path) or not self.fs.isdir(path):
+            self.errorWrite('wget: %s: Cannot open: No such file or directory\n' % outfile)
             self.exit()
             return
 
