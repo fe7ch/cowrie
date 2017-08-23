@@ -211,7 +211,10 @@ class HoneyPotShell(object):
         # echo 1 || echo 0
         line = re.sub('(echo [\d]+) \|\| echo [\d]+', '\g<1>', line)
 
-        r = re.search('.*((/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]) \|\| (/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]$', line)
+        line = re.sub('(\|\| while read [a-z]+; do (/bin/busybox )?echo \$[a-z]+; done < [a-zA-Z0-9/.\-]+)', '', line)
+
+        r = re.search('.*((/bin/busybox )?echo( -ne| -en)? [\'\"][^\'\"]+[\'\"]) \|\| (/bin/busybox )?echo( -ne| -en)?'
+                      ' [\'\"][^\'\"]+[\'\"]$', line)
 
         if r and r.group(1):
             line = line[:line.find(r.group(1))+len(r.group(1))+1]
@@ -222,7 +225,11 @@ class HoneyPotShell(object):
 
             line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
 
-        line = re.sub('(\|\| while read [a-z]+; do (/bin/busybox )?echo \$[a-z]+; done < [a-zA-Z0-9/.\-]+)', '', line)
+        r = re.search('((/bin/busybox )?cat [^|]+) \|\|[\s]+((/bin/busybox )?dd .*)$', line)
+
+        if r and r.group(1):
+
+            line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
 
         line = b"".join(line)
         line = line.decode("utf-8")
