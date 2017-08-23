@@ -56,7 +56,7 @@ class command_tftp(HoneyPotCommand):
             self.limit_size = int(cfg.get('honeypot', 'download_limit_size'))
 
         tmp_fname = '%s_%s_%s_%s' % \
-                    (time.strftime('%Y%m%d%H%M%S'),
+                    (time.strftime('%Y%m%d-%H%M%S%f'),
                      self.protocol.getProtoTransport().transportId,
                      self.protocol.terminal.transport.session.id,
                      re.sub('[^A-Za-z0-9]', '_', self.file_to_get))

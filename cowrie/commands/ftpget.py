@@ -91,7 +91,7 @@ Download a file via FTP
         url = 'ftp://%s/%s' % (self.host, self.remote_path)
 
         tmp_fname = '%s_%s_%s_%s' % \
-                    (time.strftime('%Y%m%d%H%M%S'),
+                    (time.strftime('%Y%m%d-%H%M%S%f'),
                      self.protocol.getProtoTransport().transportId,
                      self.protocol.terminal.transport.session.id,
                      re.sub('[^A-Za-z0-9]', '_', url))
