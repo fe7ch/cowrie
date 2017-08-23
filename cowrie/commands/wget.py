@@ -180,7 +180,7 @@ class command_wget(HoneyPotCommand):
         return factory.deferred
 
     def handle_CTRL_C(self):
-        self.write('^C\n')
+        self.errorWrite('^C\n')
         self.connection.transport.loseConnection()
 
     def success(self, data, outfile):
