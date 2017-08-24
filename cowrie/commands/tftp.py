@@ -151,6 +151,11 @@ class command_tftp(HoneyPotCommand):
             if self.hostname is None:
                 raise OptionNotFound("Hostname is invalid")
 
+            if self.hostname.find(':') != -1:
+                host, port = self.hostname.split(':')
+                self.hostname = host
+                self.port = int(port)
+
             self.makeTftpRetrieval()
 
         except OptionNotFound:
