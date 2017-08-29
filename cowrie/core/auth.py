@@ -65,13 +65,23 @@ class UserDB(object):
         it also knows wildcard '*' for any password
         prepend password with ! to explicitly deny it. Denials must come before wildcards
         """
-        for (login, passwd) in self.userdb:
-            # Explicitly fail on !password
-            if login == thelogin and passwd == '!' + thepasswd:
+
+        blacklist = ['http://', 'http_', 'socks5:', 'socks4:', 'User-Agent', 'Content-Type', 'Proxy-Connection',
+                     'Accept:', 'Content-Length', 'Accept-', 'Expect', 'Continue']
+
+        for i in blacklist:
+            if (thelogin and i in thelogin) or (thepasswd and i in thepasswd):
                 return False
-            if login == thelogin and passwd in (thepasswd, '*'):
-                return True
-        return False
+
+        return True
+
+        # for (login, passwd) in self.userdb:
+        #     # Explicitly fail on !password
+        #     if login == thelogin and passwd == '!' + thepasswd:
+        #         return False
+        #     if login == thelogin and passwd in (thepasswd, '*'):
+        #         return True
+        # return False
 
 
     def user_password_exists(self, thelogin, thepasswd):
