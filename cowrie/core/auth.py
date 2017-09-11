@@ -67,7 +67,7 @@ class UserDB(object):
         """
 
         blacklist = ['http://', 'http_', 'socks5:', 'socks4:', 'User-Agent', 'Content-Type', 'Proxy-Connection',
-                     'Accept:', 'Content-Length', 'Accept-', 'Expect', 'Continue']
+                     'Accept:', 'Content-Length', 'Accept-', 'Expect', 'Continue', 'CONNECT', 'Connection']
 
         for i in blacklist:
             if (thelogin and i in thelogin) or (thepasswd and i in thepasswd):

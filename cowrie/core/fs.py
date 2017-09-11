@@ -348,7 +348,7 @@ class HoneyPotFilesystem(object):
         """
         if openFlags & os.O_WRONLY == os.O_WRONLY or openFlags & os.O_RDWR == os.O_RDWR:
             # strip executable bit
-            hostmode = mode & ~(111)
+            hostmode = 0o644
             hostfile = '%s/%s_sftp_%s' % \
                        (self.cfg.get('honeypot', 'download_path'),
                     time.strftime('%Y%m%d-%H%M%S'),
