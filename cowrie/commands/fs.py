@@ -558,6 +558,31 @@ class command_touch(HoneyPotCommand):
 
 commands['/usr/bin/touch'] = command_touch
 commands['/bin/touch'] = command_touch
-commands['>'] = command_touch
 
+
+class command_redirect(HoneyPotCommand):
+    """
+    "> filename" command
+    Should be removed later when HoneyPotShell will handle pipe redirections properly
+    """
+    def call(self):
+        if not len(self.args):
+            self.errorWrite('bash: syntax error near unexpected token \'newline\'\n')
+            return
+        for f in self.args:
+            pname = self.fs.resolve_path(f, self.protocol.cwd)
+            if not self.fs.exists(os.path.dirname(pname)):
+                self.errorWrite(
+                    'bash: {}: no such file or directory\n'.format(pname))
+                return
+            p = self.fs.getfile(pname)
+            tmp_fname = '%s-%s-%s-redir_%s' % \
+                        (time.strftime('%Y%m%d-%H%M%S%f'),
+                         self.protocol.getProtoTransport().transportId,
+                         self.protocol.terminal.transport.session.id,
+                         re.sub('[^A-Za-z0-9]', '_', pname))
+            self.fs.mkfile(pname, 0, 0, 0, 33188)
+
+
+commands['>'] = command_redirect
 # vim: set sw=4 et:
