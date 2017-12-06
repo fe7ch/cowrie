@@ -145,7 +145,7 @@ class HoneyPotCommand(object):
         """
         """
         log.msg('Received CTRL-C, exiting..')
-        self.write(b'^C\n')
+        self.errorWrite(b'^C\n')
         self.exit()
 
 
