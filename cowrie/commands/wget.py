@@ -134,6 +134,7 @@ class command_wget(HoneyPotCommand):
         if self.deferred:
             self.deferred.addCallback(self.success, outfile)
             self.deferred.addErrback(self.error, url)
+        self.exit()
 
     def download(self, url, fakeoutfile, outputfile, *args, **kwargs):
         """
@@ -150,11 +151,9 @@ class command_wget(HoneyPotCommand):
             if scheme != 'http' and scheme != 'https':
                 raise NotImplementedError
             if not host:
-                self.exit()
                 return None
         except:
             self.errorWrite('%s: Unsupported scheme.\n' % (url,))
-            self.exit()
             return None
 
         if not self.quiet:
@@ -188,7 +187,7 @@ class command_wget(HoneyPotCommand):
         """
         if not os.path.isfile(self.safeurlfile):
             log.msg("there's no file " + self.safeurlfile)
-            self.exit()
+            return
 
         with open(self.safeurlfile, 'rb') as f:
             filedata = f.read()
@@ -217,8 +216,6 @@ class command_wget(HoneyPotCommand):
         else:
             self.write(filedata)
 
-        self.exit()
-
     def error(self, error, url):
 
         if hasattr(error, 'getErrorMessage'):  # exceptions
@@ -230,7 +227,6 @@ class command_wget(HoneyPotCommand):
             self.errorWrite(dateWithError + str(error.webStatus) + ': ' + error.webMessage + '\n')
         else:
             self.errorWrite('{} ERROR 404: Not Found.\n'.format(time.strftime('%Y-%m-%d %T')))
-        self.exit()
 
 
 commands['/usr/bin/wget'] = command_wget
