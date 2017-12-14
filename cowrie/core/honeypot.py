@@ -231,6 +231,11 @@ class HoneyPotShell(object):
 
             line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
 
+        r = re.search('\((/bin/busybox [a-zA-Z0-9]+)[\s]*\|\|[\s]*:\)$', line)
+
+        if r and r.group(1):
+            line = line.replace(r.group(0), r.group(1))
+
         line = b"".join(line)
         line = line.decode("utf-8")
         
