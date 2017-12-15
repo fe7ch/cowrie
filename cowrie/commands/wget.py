@@ -134,7 +134,6 @@ class command_wget(HoneyPotCommand):
         if self.deferred:
             self.deferred.addCallback(self.success, outfile)
             self.deferred.addErrback(self.error, url)
-        self.exit()
 
     def download(self, url, fakeoutfile, outputfile, *args, **kwargs):
         """
@@ -215,6 +214,7 @@ class command_wget(HoneyPotCommand):
             self.fs.chown(outfile, self.protocol.user.uid, self.protocol.user.gid)
         else:
             self.write(filedata)
+        self.exit()
 
     def error(self, error, url):
 
@@ -227,6 +227,7 @@ class command_wget(HoneyPotCommand):
             self.errorWrite(dateWithError + str(error.webStatus) + ': ' + error.webMessage + '\n')
         else:
             self.errorWrite('{} ERROR 404: Not Found.\n'.format(time.strftime('%Y-%m-%d %T')))
+        self.exit()
 
 
 commands['/usr/bin/wget'] = command_wget
