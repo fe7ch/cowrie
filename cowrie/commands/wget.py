@@ -134,6 +134,8 @@ class command_wget(HoneyPotCommand):
         if self.deferred:
             self.deferred.addCallback(self.success, outfile)
             self.deferred.addErrback(self.error, url)
+        else:
+            self.exit()
 
     def download(self, url, fakeoutfile, outputfile, *args, **kwargs):
         """
