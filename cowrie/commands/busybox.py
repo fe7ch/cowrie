@@ -3,12 +3,12 @@
 
 from __future__ import division, absolute_import
 
-from cowrie.core.honeypot import HoneyPotCommand, StdOutStdErrEmulationProtocol
+from cowrie.shell.honeypot import HoneyPotCommand,StdOutStdErrEmulationProtocol
 from twisted.python import log
 
 commands = {}
 
-busybox_help = (b'''
+busybox_help=('''
 BusyBox v1.20.2 (Debian 1:1.20.0-7) multi-call binary.
 Copyright (C) 1998-2011 Erik Andersen, Rob Landley, Denys Vlasenko
 and others. Licensed under GPLv2.
@@ -58,7 +58,8 @@ class command_busybox(HoneyPotCommand):
         """
         """
         for ln in busybox_help:
-            self.errorWrite(ln + b'\n')
+            self.errorWrite(ln+'\n')
+
 
     def call(self):
         """
@@ -74,6 +75,7 @@ class command_busybox(HoneyPotCommand):
             log.msg(eventid='cowrie.command.success', input=line, format='Command found: %(input)s')
             command = StdOutStdErrEmulationProtocol(self.protocol, cmdclass, self.args[1:], self.input_data, None)
             # Workaround for the issue: #352
+            # https://github.com/fe7ch/cowrie/commit/9b33509
             # For an unknown reason inserted command won't be invoked later, if it's followed by an invalid command
             # so lets just call the command in question
 
@@ -93,7 +95,7 @@ class command_busybox(HoneyPotCommand):
             if self.input_data:
                 self.write(self.input_data)
         else:
-            self.write(b'{}: applet not found\n'.format(cmd))
+            self.write('{}: applet not found\n'.format(cmd))
 
 commands['busybox'] = command_busybox
 commands['/bin/busybox'] = command_busybox

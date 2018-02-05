@@ -24,7 +24,9 @@ class shlex:
     "A lexical analyzer class for simple shell-like syntaxes."
     def __init__(self, instream=None, infile=None, posix=False,
                  punctuation_chars=False):
-        if isinstance(instream, basestring):
+        if isinstance(instream, str):
+            instream = StringIO(instream)
+        elif isinstance(instream, basestring):
             instream = StringIO(instream)
         if instream is not None:
             self.instream = instream
@@ -64,7 +66,7 @@ class shlex:
             # _pushback_chars is a push back queue used by lookahead logic
             self._pushback_chars = deque()
             # these chars added because allowed in file names, args, wildcards
-            self.wordchars += '@{}~-./*?=$:+^'
+            self.wordchars += '@%{}~-./*?=$:+^'
             #remove any punctuation chars from wordchars
             self.wordchars = ''.join(c for c in self.wordchars if c not in
                                      self.punctuation_chars)

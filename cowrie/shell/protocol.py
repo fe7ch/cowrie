@@ -20,7 +20,7 @@ from twisted.protocols.policies import TimeoutMixin
 from twisted.conch import recvline
 from twisted.conch.insults import insults
 
-from cowrie.core import honeypot
+from cowrie.shell import honeypot
 from cowrie.core import utils
 
 class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
@@ -120,15 +120,6 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
         """
         ret = failure.Failure(error.ProcessTerminated(exitCode=1))
         self.terminal.transport.processEnded(ret)
-
-
-    def eofReceived(self):
-        """
-        this should probably not go through ctrl-d, but use processprotocol to close stdin
-        """
-        log.msg("received eof, sending ctrl-d to command")
-        if len(self.cmdstack):
-            self.cmdstack[-1].handle_CTRL_D()
 
 
     def connectionLost(self, reason):
@@ -232,9 +223,20 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
         #    pt.factory.starttime = reset
         return r
 
+
     def getClientVersion(self):
         pt = self.getProtoTransport()
         return pt.otherVersionString
+
+
+    def eofReceived(self):
+        # Shell received EOF, nicely exit
+        """
+        TODO: this should probably not go through transport, but use processprotocol to close stdin
+        """
+        ret = failure.Failure(error.ProcessTerminated(exitCode=0))
+        self.terminal.transport.processEnded(ret)
+
 
 
 class HoneyPotExecProtocol(HoneyPotBaseProtocol):
@@ -254,6 +256,14 @@ class HoneyPotExecProtocol(HoneyPotBaseProtocol):
         self.cmdstack = [honeypot.HoneyPotShell(self, interactive=False)]
         self.cmdstack[0].lineReceived(self.execcmd)
 
+
+    def eofReceived(self):
+        """
+        Received EOF, run command to finish and then exit
+        """
+        log.msg("received eof, sending ctrl-d to command")
+        if len(self.cmdstack):
+            self.cmdstack[-1].handle_CTRL_D()
 
 
 class HoneyPotInteractiveProtocol(HoneyPotBaseProtocol, recvline.HistoricRecvLine):
@@ -368,7 +378,7 @@ class HoneyPotInteractiveProtocol(HoneyPotBaseProtocol, recvline.HistoricRecvLin
         """
         if len(self.cmdstack) == 1:
             if self.lineBuffer:
-                self.historyLines.append(''.join(self.lineBuffer))
+                self.historyLines.append(b''.join(self.lineBuffer))
             self.historyPosition = len(self.historyLines)
         return recvline.RecvLine.handle_RETURN(self)
 

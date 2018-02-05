@@ -36,8 +36,8 @@ import copy
 
 import twisted.python.log as log
 
-from cowrie.core import fs
-from cowrie.core import honeypot
+from cowrie.shell import fs
+from cowrie.shell import honeypot
 
 class CowrieServer(object):
     """
@@ -52,5 +52,12 @@ class CowrieServer(object):
         self.cfg = realm.cfg
         self.avatars = []
         self.hostname = self.cfg.get('honeypot', 'hostname')
-        self.fs = fs.HoneyPotFilesystem(copy.deepcopy(realm.pckl),self.cfg)
+        self.fs = None
+
+
+    def initFileSystem(self):
+        """
+        Do this so we can trigger it later. Not all sessions need file system
+        """
+        self.fs = fs.HoneyPotFilesystem(copy.deepcopy(fs.PICKLE),self.cfg)
 

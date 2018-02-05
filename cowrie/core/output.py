@@ -37,6 +37,7 @@ import datetime
 import re
 import copy
 import socket
+import time
 
 # Events:
 #  cowrie.client.fingerprint
@@ -57,11 +58,32 @@ import socket
 #  cowrie.session.file_download
 #  cowrie.session.file_upload
 
+"""
+The time is available in two formats in each event, as key 'time'
+in epoch format and in key 'timestamp' as a ISO compliant string
+in UTC.
+"""
+
+
+def convert(input):
+    """
+    This converts a nested dictionary with bytes in it to string
+    """
+    if isinstance(input, dict):
+        return {convert(key): convert(value) for key, value in list(input.items())}
+    elif isinstance(input, list):
+        return [convert(element) for element in input]
+    elif isinstance(input, bytes):
+        return input.decode('utf-8')
+    else:
+        return input
+
 
 class Output(object):
     """
-    This is the abstract base class intended to be inherited by cowrie output plugins
-    Plugins require the mandatory methods: stop, start and write
+    This is the abstract base class intended to be inherited by
+    cowrie output plugins. Plugins require the mandatory
+    methods: stop, start and write
     """
 
     __metaclass__ = abc.ABCMeta
@@ -129,16 +151,13 @@ class Output(object):
         if not 'eventid' in event:
             return
 
-        ev = copy.copy(event)
-
+        ev = convert(event)
         ev['sensor'] = self.sensor
 
         # Add ISO timestamp and sensor data
         if not 'time' in ev:
-            ev['timestamp'] = datetime.datetime.utcnow().isoformat() + 'Z'
-        else:
-            ev['timestamp'] = datetime.datetime.utcfromtimestamp(ev['time']).isoformat() + 'Z'
-            del ev['time']
+            ev['time'] = time.time()
+        ev['timestamp'] = datetime.datetime.utcfromtimestamp(ev['time']).isoformat() + 'Z'
 
         if 'format' in ev and (not 'message' in ev or ev['message'] == () ):
             try:

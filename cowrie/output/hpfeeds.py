@@ -44,6 +44,11 @@ class BadClient(Exception):
     pass
 
 
+def set2json(value):
+    if isinstance(value, set):
+        return list(value)
+    return value
+
 
 def strpack8(x):
     """
@@ -119,7 +124,7 @@ class FeedUnpack(object):
 
 class hpclient(object):
     def __init__(self, server, port, ident, secret, debug):
-        print 'hpfeeds client init broker {0}:{1}, identifier {2}'.format(server, port, ident)
+        log.msg('hpfeeds client init broker {0}:{1}, identifier {2}'.format(server, port, ident))
         self.server, self.port = server, int(port)
         self.ident, self.secret = ident.encode('latin1'), secret.encode('latin1')
         self.debug = debug
@@ -136,7 +141,7 @@ class hpclient(object):
         self.s.settimeout(3)
         try: self.s.connect((self.server, self.port))
         except:
-            print 'hpfeeds client could not connect to broker.'
+            log.msg('hpfeeds client could not connect to broker.')
             self.s = None
         else:
             self.s.settimeout(None)
@@ -157,7 +162,8 @@ class hpclient(object):
 
 
     def handle_established(self):
-        if self.debug: print 'hpclient established'
+        if self.debug:
+            log.msg('hpclient established')
         while self.state != 'GOTINFO':
             self.read()
 
@@ -208,12 +214,12 @@ class hpclient(object):
 
     def publish(self, channel, **kwargs):
         try:
-            self.send(msgpublish(self.ident, channel, json.dumps(kwargs).encode('latin1')))
+            self.send(msgpublish(self.ident, channel, json.dumps(kwargs, default=set2json).encode('latin1')))
         except Exception as e:
             log.err('connection to hpfriends lost: {0}'.format(e))
             log.err('connecting')
             self.connect()
-            self.send(msgpublish(self.ident, channel, json.dumps(kwargs).encode('latin1')))
+            self.send(msgpublish(self.ident, channel, json.dumps(kwargs, default=set2json).encode('latin1')))
 
 
     def sendfile(self, filepath):
@@ -286,7 +292,7 @@ class Output(cowrie.core.output.Output):
                 'hostIP': entry["dst_ip"], 'hostPort': entry["dst_port"],
                 'loggedin': None, 'credentials':[], 'commands':[],
                 'unknownCommands':[], 'urls':[], 'version': None,
-                'ttylog': None }
+                'ttylog': None, 'hashes': set(), 'protocol': entry['protocol']}
 
         elif entry["eventid"] == 'cowrie.login.success':
             u, p = entry['username'], entry['password']
@@ -307,6 +313,10 @@ class Output(cowrie.core.output.Output):
         elif entry["eventid"] == 'cowrie.session.file_download':
             url = entry['url']
             self.meta[session]['urls'].append(url)
+            self.meta[session]['hashes'].add(entry['shasum'])
+
+        elif entry["eventid"] == 'cowrie.session.file_upload':
+            self.meta[session]['hashes'].add(entry['shasum'])
 
         elif entry["eventid"] == 'cowrie.client.version':
             v = entry['version']
@@ -314,8 +324,8 @@ class Output(cowrie.core.output.Output):
 
         elif entry["eventid"] == 'cowrie.log.closed':
             # entry["ttylog"]
-            with open( entry["ttylog"]) as ttylog:
-                self.meta['ttylog'] = ttylog.read().encode('hex')
+            with open(entry["ttylog"]) as ttylog:
+                self.meta[session]['ttylog'] = ttylog.read().encode('hex')
 
         elif entry["eventid"] == 'cowrie.session.closed':
             log.msg('publishing metadata to hpfeeds')

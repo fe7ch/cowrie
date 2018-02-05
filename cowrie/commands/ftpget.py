@@ -13,8 +13,8 @@ from ftplib import FTP
 
 from twisted.python import log
 
-from cowrie.core.honeypot import HoneyPotCommand
-from cowrie.core.fs import *
+from cowrie.shell.honeypot import HoneyPotCommand
+from cowrie.shell.fs import *
 
 commands = {}
 
@@ -88,7 +88,20 @@ Download a file via FTP
             self.exit()
             return
 
+        cfg = self.protocol.cfg
         url = 'ftp://%s/%s' % (self.host, self.remote_path)
+        self.download_path = cfg.get('honeypot', 'download_path')
+        
+        self.url_log = 'ftp://'
+        if self.username:
+            self.url_log = '{}{}'.format(self.url_log, self.username)
+            if self.password:
+                self.url_log = '{}:{}'.format(self.url_log, self.password)
+            self.url_log = '{}@'.format(self.url_log)
+        self.url_log = '{}{}'.format(self.url_log, self.host)
+        if self.port != 21:
+            self.url_log = '{}:{}'.format(self.url_log, self.port)
+        self.url_log = '{}/{}'.format(self.url_log, self.remote_path)
 
         tmp_fname = '%s_%s_%s_%s' % \
                     (time.strftime('%Y%m%d-%H%M%S%f'),
@@ -101,6 +114,9 @@ Download a file via FTP
         result = self.ftp_download(self.safeoutfile)
 
         if not result:
+            self.protocol.logDispatch(eventid='cowrie.session.file_download.failed',
+                                      format='Attempt to download file(s) from URL (%(url)s) failed',
+                                      url=self.url_log)
             self.safeoutfile = None
             self.exit()
             return
@@ -125,7 +141,7 @@ Download a file via FTP
 
         self.protocol.logDispatch(eventid='cowrie.session.file_download',
                                   format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
-                                  url=url,
+                                  url=self.url_log,
                                   outfile=hash_path,
                                   shasum=shasum,
                                   sha1=sha1sum)

@@ -37,6 +37,10 @@ from zope.interface import implementer, provider
 import os
 import sys
 
+from twisted._version import __version__
+if __version__.major < 17:
+    raise ImportError( "Your version of Twisted is too old. Please ensure your virtual environment is set up correctly.")
+
 from twisted.python import log, usage
 from twisted.plugin import IPlugin
 from twisted.application.service import IServiceMaker
@@ -117,6 +121,9 @@ Makes a Cowrie SSH/Telnet honeypot.
         if os.name == 'posix' and os.getuid() == 0:
             print('ERROR: You must not run cowrie as root!')
             sys.exit(1)
+
+        log.msg("Python Version {}".format(str(sys.version).replace('\n','')))
+        log.msg("Twisted Version {}.{}.{}".format(__version__.major, __version__.minor, __version__.micro))
 
         cfg = readConfigFile(("cowrie.cfg.dist", "etc/cowrie.cfg", "cowrie.cfg"))
 

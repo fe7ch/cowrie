@@ -30,6 +30,12 @@ Additional functionality over standard kippo:
 * Logging in JSON format for easy processing in log management solutions
 * Many, many additional commands
 
+## Docker
+
+Docker versions are available.
+* Get the Dockerfile directly at https://github.com/micheloosterhof/docker-cowrie
+* Run from the Docker regstry with: ```docker pull cowrie/cowrie```
+
 ## Requirements
 
 Software required:
@@ -60,6 +66,14 @@ Maybe. See [FAQ](https://github.com/micheloosterhof/cowrie/wiki/Frequently-Asked
 ## I have some questions!
 
 Please visit https://github.com/micheloosterhof/cowrie/issues
+
+## I'd like to install with Docker
+
+Run:
+```docker pull cowrie/cowrie```
+to download images from hub.docker.com
+
+Or look at https://github.com/micheloosterhof/docker-cowrie for the Dockerfile
 
 ## Contributing
 

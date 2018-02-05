@@ -16,8 +16,8 @@ from twisted.web import client
 from twisted.internet import reactor, ssl
 from twisted.python import log, compat
 
-from cowrie.core.honeypot import HoneyPotCommand
-from cowrie.core.fs import *
+from cowrie.shell.honeypot import HoneyPotCommand
+from cowrie.shell.fs import *
 
 """
 """
@@ -35,8 +35,8 @@ class command_curl(HoneyPotCommand):
                                           ['help', 'manual', 'silent'])
         except getopt.GetoptError as err:
             # TODO: should be 'unknown' instead of 'not recognized'
-            self.write(b"curl: {}\n".format(err))
-            self.write(b"curl: try 'curl --help' or 'curl --manual' for more information\n")
+            self.write("curl: {}\n".format(err))
+            self.write("curl: try 'curl --help' or 'curl --manual' for more information\n")
             self.exit()
             return
 
@@ -51,7 +51,7 @@ class command_curl(HoneyPotCommand):
             if args[0] is not None:
                 url = str(args[0]).strip()
         else:
-            self.write(b"curl: try 'curl --help' or 'curl --manual' for more information\n")
+            self.write("curl: try 'curl --help' or 'curl --manual' for more information\n")
             self.exit()
             return
 
@@ -66,7 +66,7 @@ class command_curl(HoneyPotCommand):
             if opt[0] == '-O':
                 outfile = urldata.path.split('/')[-1]
                 if outfile is None or not len(outfile.strip()) or not urldata.path.count('/'):
-                    self.write(b'curl: Remote file name has no length!\n')
+                    self.write('curl: Remote file name has no length!\n')
                     self.exit()
                     return
 
@@ -76,12 +76,12 @@ class command_curl(HoneyPotCommand):
             if not path or \
                     not self.fs.exists(path) or \
                     not self.fs.isdir(path):
-                self.write(b'curl: %s: Cannot open: No such file or directory\n' % \
+                self.write('curl: %s: Cannot open: No such file or directory\n' % \
                            (outfile,))
                 self.exit()
                 return
 
-        url=bytes(url)
+        url=url.encode('ascii')
         self.url = url
         self.limit_size = 0
         cfg = self.protocol.cfg
@@ -93,7 +93,7 @@ class command_curl(HoneyPotCommand):
                         (time.strftime('%Y%m%d-%H%M%S%f'),
                          self.protocol.getProtoTransport().transportId,
                          self.protocol.terminal.transport.session.id,
-                         re.sub('[^A-Za-z0-9]', '_', url))
+                         re.sub('[^A-Za-z0-9]', '_', url.decode('ascii')))
             self.safeoutfile = os.path.join(self.download_path, tmp_fname)
 
         self.deferred = self.download(url, outfile, self.safeoutfile)
@@ -105,7 +105,7 @@ class command_curl(HoneyPotCommand):
         """
         """
 
-        self.write(b"""Usage: curl [options...] <url>
+        self.write("""Usage: curl [options...] <url>
 Options: (H) means HTTP/HTTPS only, (F) means FTP only
      --anyauth       Pick "any" authentication method (H)
  -a, --append        Append to target file when uploading (F/SFTP)
@@ -270,10 +270,10 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
             host = parsed.hostname
             port = parsed.port or (443 if scheme == 'https' else 80)
             path = parsed.path or '/'
-            if scheme != 'http' and scheme != 'https':
+            if scheme != b'http' and scheme != b'https':
                 raise NotImplementedError
         except:
-            self.write(b'%s: Unsupported scheme.\n' % (url,))
+            self.errorWrite('curl: (1) Protocol "{}" not supported or disabled in libcurl\n'.format(scheme))
             self.exit()
             return None
 
@@ -296,7 +296,7 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
     def handle_CTRL_C(self):
         """
         """
-        self.write(b'^C\n')
+        self.write('^C\n')
         self.connection.transport.loseConnection()
 
     def success(self, data, outfile):
@@ -342,10 +342,13 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
         """
         if hasattr(error, 'getErrorMessage'):  # Exceptions
             error = error.getErrorMessage()
-        self.write(error + b'\n')
+        self.write(error+'\n')
         # Real curl also adds this:
         # self.write('%s ERROR 404: Not Found.\n' % \
         #    time.strftime('%Y-%m-%d %T'))
+        self.protocol.logDispatch(eventid='cowrie.session.file_download.failed',
+                                  format='Attempt to download file(s) from URL (%(url)s) failed',
+                                  url=self.url)
         self.exit()
 
 
@@ -356,6 +359,9 @@ class HTTPProgressDownloader(client.HTTPDownloader):
     """
     From http://code.activestate.com/recipes/525493/
     """
+    totallength = 0
+    currentlength = 0
+    lastupdate = 0
 
     def __init__(self, curl, fakeoutfile, url, outfile, headers=None):
         """
@@ -365,7 +371,6 @@ class HTTPProgressDownloader(client.HTTPDownloader):
         self.status = None
         self.curl = curl
         self.fakeoutfile = fakeoutfile
-        self.lastupdate = 0
         self.started = time.time()
         self.proglen = 0
         self.nomore = False
@@ -400,8 +405,8 @@ class HTTPProgressDownloader(client.HTTPDownloader):
                 self.nomore = True
 
             if self.fakeoutfile:
-                self.curl.write(b'  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n')
-                self.curl.write(b'                                 Dload  Upload   Total   Spent    Left  Speed\n')
+                self.curl.write('  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current\n')
+                self.curl.write('                                 Dload  Upload   Total   Spent    Left  Speed\n')
 
         return client.HTTPDownloader.gotHeaders(self, headers)
 
@@ -439,7 +444,7 @@ class HTTPProgressDownloader(client.HTTPDownloader):
             return client.HTTPDownloader.pageEnd(self)
 
         if self.fakeoutfile:
-            self.curl.write(b"\r100  %d  100  %d    0     0  %d      0 --:--:-- --:--:-- --:--:-- %d\n" % \
+            self.curl.write("\r100  %d  100  %d    0     0  %d      0 --:--:-- --:--:-- --:--:-- %d\n" % \
                             (self.currentlength, self.currentlength, 63673, 65181)
                             )
 
@@ -449,7 +454,7 @@ class HTTPProgressDownloader(client.HTTPDownloader):
                 self.curl.safeoutfile)
         else:
             with open(self.curl.safeoutfile, 'rb') as f:
-                self.curl.write(f.read() + b'\n')
+                self.curl.write(f.read()+'\n')
 
         self.curl.fileName = self.fileName
         return client.HTTPDownloader.pageEnd(self)

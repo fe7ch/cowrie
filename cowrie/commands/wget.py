@@ -8,14 +8,16 @@ import re
 import os
 import getopt
 import hashlib
+import tempfile
+
 from OpenSSL import SSL
 
 from twisted.web import client
 from twisted.internet import reactor, ssl
 from twisted.python import log, compat
 
-from cowrie.core.honeypot import HoneyPotCommand
-from cowrie.core.fs import *
+from cowrie.shell.honeypot import HoneyPotCommand
+from cowrie.shell.fs import *
 
 """
 """
@@ -102,7 +104,8 @@ class command_wget(HoneyPotCommand):
             url = 'http://%s' % url
 
         urldata = compat.urllib_parse.urlparse(url)
-        url = bytes(url)
+
+        url = url.encode('utf8')
 
         if outfile is None:
             outfile = urldata.path.split('/')[-1]
@@ -118,22 +121,21 @@ class command_wget(HoneyPotCommand):
                 return
 
         self.url = url
-        self.limit_size = 0
+
         cfg = self.protocol.cfg
+        self.limit_size = 0
         if cfg.has_option('honeypot', 'download_limit_size'):
             self.limit_size = int(cfg.get('honeypot', 'download_limit_size'))
+        self.downloadPath = cfg.get('honeypot', 'download_path')
 
-        tmp_fname = '%s_%s_%s_%s' % \
-                    (time.strftime('%Y%m%d-%H%M%S%f'),
-                     self.protocol.getProtoTransport().transportId,
-                     self.protocol.terminal.transport.session.id,
-                     re.sub('[^A-Za-z0-9]', '_', url))
-        self.safeurlfile = os.path.join(self.download_path, tmp_fname)
+        self.artifactFile = tempfile.NamedTemporaryFile(dir=self.downloadPath, delete=False)
+        # HTTPDownloader will close() the file object so need to preserve the name
+        self.artifactName = self.artifactFile.name
 
-        self.deferred = self.download(url, outfile, self.safeurlfile)
-        if self.deferred:
-            self.deferred.addCallback(self.success, outfile)
-            self.deferred.addErrback(self.error, url)
+        d = self.download(url, outfile, self.artifactFile)
+        if d:
+            d.addCallback(self.success, outfile)
+            d.addErrback(self.error, url)
         else:
             self.exit()
 
@@ -147,9 +149,9 @@ class command_wget(HoneyPotCommand):
             parsed = compat.urllib_parse.urlparse(url)
             scheme = parsed.scheme
             host = parsed.hostname
-            port = parsed.port or (443 if scheme == 'https' else 80)
+            port = parsed.port or (443 if scheme == b'https' else 80)
             path = parsed.path or '/'
-            if scheme != 'http' and scheme != 'https':
+            if scheme != b'http' and scheme != b'https':
                 raise NotImplementedError
             if not host:
                 return None
@@ -158,8 +160,8 @@ class command_wget(HoneyPotCommand):
             return None
 
         if not self.quiet:
-            self.errorWrite('--%s--  %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), url))
-            self.errorWrite('Connecting to %s:%d... connected.\n' % (host, port))
+            self.errorWrite('--%s--  %s\n' % (time.strftime('%Y-%m-%d %H:%M:%S'), url.decode('utf8')))
+            self.errorWrite('Connecting to %s:%d... connected.\n' % (host.decode('utf8'), port))
             self.errorWrite('HTTP request sent, awaiting response... ')
 
         factory = HTTPProgressDownloader(self, fakeoutfile, url, outputfile, *args, **kwargs)
@@ -168,11 +170,11 @@ class command_wget(HoneyPotCommand):
         if self.protocol.cfg.has_option('honeypot', 'out_addr'):
             out_addr = (self.protocol.cfg.get('honeypot', 'out_addr'), 0)
 
-        if scheme == 'https':
+        if scheme == b'https':
             contextFactory = ssl.ClientContextFactory()
             contextFactory.method = SSL.SSLv23_METHOD
             self.connection = reactor.connectSSL(host, port, factory, contextFactory, bindAddress=out_addr)
-        elif scheme == 'http':
+        elif scheme == b'http':
             self.connection = reactor.connectTCP(host, port, factory, bindAddress=out_addr)
         else:
             raise NotImplementedError
@@ -180,28 +182,32 @@ class command_wget(HoneyPotCommand):
         return factory.deferred
 
     def handle_CTRL_C(self):
+        """
+        """
         self.errorWrite('^C\n')
         self.connection.transport.loseConnection()
 
     def success(self, data, outfile):
         """
         """
-        if not os.path.isfile(self.safeurlfile):
-            log.msg("there's no file " + self.safeurlfile)
+        if not os.path.isfile(self.artifactName):
+            log.msg("there's no file " + self.artifactName)
             return
 
-        with open(self.safeurlfile, 'rb') as f:
+        with open(self.artifactName, 'rb') as f:
             filedata = f.read()
             shasum = hashlib.sha256(filedata).hexdigest()
             sha1sum = hashlib.sha1(filedata).hexdigest()
             hash_path = os.path.join(self.download_path_uniq, shasum)
 
-        # If we have content already, delete temp file
+        # Rename temp file to the hash
         if not os.path.exists(hash_path):
-            os.rename(self.safeurlfile, hash_path)
+            os.rename(self.artifactName, hash_path)
+            unique = True
         else:
-            os.remove(self.safeurlfile)
+            os.remove(self.artifactName)
             log.msg("Not storing duplicate content " + shasum)
+            unique = False
 
         self.protocol.logDispatch(eventid='cowrie.session.file_download',
                                   format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
@@ -210,25 +216,29 @@ class command_wget(HoneyPotCommand):
                                   shasum=shasum,
                                   sha1=sha1sum)
 
+        # Update honeyfs to point to downloaded file or write to screen
         if outfile != '-':
-            # Update the honeyfs to point to downloaded file
             self.fs.update_realfile(self.fs.getfile(outfile), hash_path)
             self.fs.chown(outfile, self.protocol.user.uid, self.protocol.user.gid)
         else:
             self.write(filedata)
+
         self.exit()
 
     def error(self, error, url):
-
+        """
+        """
         if hasattr(error, 'getErrorMessage'):  # exceptions
             errorMessage = error.getErrorMessage()
             self.errorWrite(errorMessage + '\n')
             # Real wget also adds this:
         if hasattr(error, 'webStatus') and hasattr(error, 'webMessage'):  # exceptions
-            dateWithError = '{} ERROR '.format(time.strftime('%Y-%m-%d %T'))
-            self.errorWrite(dateWithError + str(error.webStatus) + ': ' + error.webMessage + '\n')
+            self.errorWrite('{} ERROR {}: {}\n'.format(time.strftime('%Y-%m-%d %T'), error.webStatus.decode(), error.webMessage.decode()))
         else:
             self.errorWrite('{} ERROR 404: Not Found.\n'.format(time.strftime('%Y-%m-%d %T')))
+        self.protocol.logDispatch(eventid='cowrie.session.file_download.failed',
+                                  format='Attempt to download file(s) from URL (%(url)s) failed',
+                                  url=self.url)
         self.exit()
 
 
@@ -280,16 +290,15 @@ class HTTPProgressDownloader(client.HTTPDownloader):
 
             if self.totallength > 0:
                 if not self.quiet:
-                    self.wget.errorWrite('Length: %d (%s) [%s]\n' %
-                                         (self.totallength,
-                                          sizeof_fmt(self.totallength),
-                                          self.contenttype))
+                    self.wget.errorWrite('Length: %d (%s) [%s]\n' % \
+                                    (self.totallength,
+                                     sizeof_fmt(self.totallength),
+                                     self.contenttype))
             else:
                 if not self.quiet:
                     self.wget.errorWrite('Length: unspecified [{}]\n'.format(self.contenttype))
             if 0 < self.wget.limit_size < self.totallength:
                 log.msg('Not saving URL ({}) due to file size limit'.format(self.wget.url))
-                self.fileName = os.path.devnull
                 self.nomore = True
             if not self.quiet:
                 if self.fakeoutfile == '-':
@@ -309,10 +318,6 @@ class HTTPProgressDownloader(client.HTTPDownloader):
             if not self.nomore and 0 < self.wget.limit_size < self.currentlength:
                 log.msg('File limit reached, not saving any more data!')
                 self.nomore = True
-                self.file.close()
-                self.fileName = os.path.devnull
-                self.file = self.openFile(data)
-
             if (time.time() - self.lastupdate) < 0.5:
                 return client.HTTPDownloader.pagePart(self, data)
             if self.totallength:
@@ -341,10 +346,10 @@ class HTTPProgressDownloader(client.HTTPDownloader):
         if self.totallength != 0 and self.currentlength != self.totallength:
             return client.HTTPDownloader.pageEnd(self)
         if not self.quiet:
-            self.wget.errorWrite('\r100%%[%s] %s %dK/s' %
-                                 ('%s>' % (38 * '='),
-                                  splitthousands(str(int(self.totallength))).ljust(12),
-                                  self.speed / 1000))
+            self.wget.errorWrite('\r100%%[%s] %s %dK/s' % \
+                            ('%s>' % (38 * '='),
+                             splitthousands(str(int(self.totallength))).ljust(12),
+                             self.speed / 1000))
             self.wget.errorWrite('\n\n')
             self.wget.errorWrite(
                 '%s (%d KB/s) - `%s\' saved [%d/%d]\n\n' %
@@ -353,7 +358,5 @@ class HTTPProgressDownloader(client.HTTPDownloader):
                  self.fakeoutfile, self.currentlength, self.totallength))
         if self.fakeoutfile != '-':
             self.wget.fs.mkfile(self.fakeoutfile, 0, 0, self.totallength, 33188)
-            self.wget.fs.update_realfile(self.wget.fs.getfile(self.fakeoutfile), self.wget.safeurlfile)
 
-        self.wget.fileName = self.fileName
         return client.HTTPDownloader.pageEnd(self)

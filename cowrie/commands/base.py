@@ -13,7 +13,7 @@ from twisted.python import failure, log
 
 from twisted.internet import error, reactor
 
-from cowrie.core.honeypot import HoneyPotCommand, HoneyPotShell, StdOutStdErrEmulationProtocol
+from cowrie.shell.honeypot import HoneyPotCommand, HoneyPotShell, StdOutStdErrEmulationProtocol
 from cowrie.core.auth import UserDB
 from cowrie.core import utils
 
@@ -143,13 +143,13 @@ class command_echo(HoneyPotCommand):
         # FIXME: Wrap in exception, Python escape cannot handle single digit \x codes (e.g. \x1)
         try:
             # replace r'\\x' with r'\x'
-            s = ' '.join(args).replace(b'\\\\x', b'\\x')
+            s = ' '.join(args).replace('\\\\x', '\\x')
 
             # replace single character escape \x0 with \x00
             s = re.sub('(?<=\\\\)x([0-9a-fA-F])(?=\\\\|\"|\'|\s|$)', 'x0\g<1>', s)
 
             # strip single and double quotes
-            s = s.strip(b'\"\'')
+            s = s.strip('\"\'')
 
             # if the string ends with \c escape, strip it and set newline flag to False
             if s.endswith('\\c'):
@@ -180,13 +180,13 @@ class command_printf(HoneyPotCommand):
                     escape_fn = functools.partial(unicode.decode, encoding="string_escape")
 
                     # replace r'\\x' with r'\x'
-                    s = ''.join(self.args[0]).replace(b'\\\\x', b'\\x')
+                    s = ''.join(self.args[0]).replace('\\\\x', '\\x')
 
                     # replace single character escape \x0 with \x00
                     s = re.sub('(?<=\\\\)x([0-9a-fA-F])(?=\\\\|\"|\'|\s|$)', 'x0\g<1>', s)
 
                     # strip single and double quotes
-                    s = s.strip(b'\"\'')
+                    s = s.strip('\"\'')
 
                     # if the string ends with \c escape, strip it
                     if s.endswith('\\c'):
@@ -205,11 +205,15 @@ class command_exit(HoneyPotCommand):
     def call(self):
         """
         """
-        # exit current shell
-        self.protocol.cmdstack.pop()
-
+        stat = failure.Failure(error.ProcessDone(status=""))
+        self.protocol.terminal.transport.processEnded(stat)
         return
 
+
+    def exit(self):
+        """
+        """
+        pass
 commands['exit'] = command_exit
 commands['logout'] = command_exit
 
@@ -699,5 +703,6 @@ commands['/bin/su'] = command_nop
 commands['/bin/chown'] = command_nop
 commands['/bin/chgrp'] = command_nop
 commands['/usr/bin/chattr'] = command_nop
+commands[':'] = command_nop
 
 # vim: set sw=4 et:
