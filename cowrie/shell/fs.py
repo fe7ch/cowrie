@@ -65,9 +65,8 @@ class HoneyPotFilesystem(object):
     """
     """
 
-    def __init__(self, fs, cfg):
+    def __init__(self, fs):
         self.fs = fs
-        self.cfg = cfg
 
         # Keep track of open file descriptors
         self.tempfiles = {}
@@ -78,7 +77,7 @@ class HoneyPotFilesystem(object):
 
         # Get the honeyfs path from the config file and explore it for file
         # contents:
-        self.init_honeyfs(self.cfg.get('honeypot', 'contents_path'))
+        self.init_honeyfs(CONFIG.get('honeypot', 'contents_path'))
 
 
     def init_honeyfs(self, honeyfs_path):
@@ -359,7 +358,7 @@ class HoneyPotFilesystem(object):
             # strip executable bit
             hostmode = 0o644
             hostfile = '%s/%s_sftp_%s' % \
-                       (self.cfg.get('honeypot', 'download_path'),
+                       (CONFIG.get('honeypot', 'download_path'),
                     time.strftime('%Y%m%d-%H%M%S'),
                     re.sub('[^A-Za-z0-9]', '_', filename))
             #log.msg("fs.open file for writing, saving to %s" % safeoutfile)
@@ -400,7 +399,7 @@ class HoneyPotFilesystem(object):
                 shasum = hashlib.sha256(d).hexdigest()
                 sha1sum = hashlib.sha1(d).hexdigest()
 
-            shasumfile = os.path.join(self.cfg.get('honeypot', 'download_path_uniq'), shasum)
+            shasumfile = os.path.join(CONFIG.get('honeypot', 'download_path_uniq'), shasum)
 
             if os.path.exists(shasumfile):
                 os.remove(self.tempfiles[fd])

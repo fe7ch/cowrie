@@ -39,6 +39,8 @@ from twisted.python import log
 from cowrie.shell.honeypot import HoneyPotCommand
 from cowrie.shell import fs
 
+from cowrie.core.config import CONFIG
+
 commands = {}
 
 
@@ -57,6 +59,12 @@ class command_scp(HoneyPotCommand):
     def start(self):
         """
         """
+        self.download_path = CONFIG.get('honeypot', 'download_path')
+
+        try:
+           self.download_path_uniq = CONFIG.get('honeypot', 'download_path_uniq')
+        except:
+           self.download_path_uniq = CONFIG.get('honeypot', 'download_path')
 
         try:
             optlist, args = getopt.getopt(self.args, 'tdv:')
@@ -216,6 +224,25 @@ class command_scp(HoneyPotCommand):
 
         self.exit()
 
+
+    def handle_CTRL_D(self):
+
+        if self.protocol.terminal.stdinlogOpen and self.protocol.terminal.stdinlogFile and \
+                os.path.exists(self.protocol.terminal.stdinlogFile):
+            with open(self.protocol.terminal.stdinlogFile, 'rb') as f:
+                data = f.read()
+                header = data[:data.find('\n')]
+                if re.match('C0[\d]{3} [\d]+ [^\s]+', header):
+                    data = data[data.find('\n')+1:]
+                else:
+                    data = ''
+
+            if data:
+                with open(self.protocol.terminal.stdinlogFile, 'wb') as f:
+                    f.write(data)
+
+
+        self.exit()
 
 commands['/usr/bin/scp'] = command_scp
 

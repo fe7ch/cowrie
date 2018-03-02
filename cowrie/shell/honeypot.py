@@ -19,6 +19,8 @@ from twisted.internet import error
 
 from cowrie.shell import fs
 
+from cowrie.core.config import CONFIG
+
 # From Python3.6 we get the new shlex version
 if sys.version_info.major >= 3 and sys.version_info.minor >= 6:
     import shlex
@@ -152,7 +154,7 @@ class HoneyPotCommand(object):
         """
         """
         log.msg('Received CTRL-C, exiting..')
-        self.errorWrite(b'^C\n')
+        self.errorWrite('^C\n')
         self.exit()
 
 
@@ -399,7 +401,7 @@ class HoneyPotShell(object):
 
             cmdclass = self.protocol.getCommand(cmd['command'], environ['PATH'] .split(':'))
             if cmdclass:
-                log.msg(eventid='cowrie.command.success', input=cmd['command'] + " " + ' '.join(cmd['rargs']), format='Command found: %(input)s')
+                log.msg(input=cmd['command'] + " " + ' '.join(cmd['rargs']), format='Command found: %(input)s')
                 if index == len(cmd_array)-1:
                     lastpp = StdOutStdErrEmulationProtocol(self.protocol, cmdclass, cmd['rargs'], None, None)
                     pp = lastpp
