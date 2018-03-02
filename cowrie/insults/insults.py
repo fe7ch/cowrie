@@ -34,7 +34,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         self.ttylogPath = CONFIG.get('honeypot', 'ttylog_path')
         self.downloadPath = CONFIG.get('honeypot', 'download_path')
-        self.downloadPathUniq = cfg.get('honeypot', 'download_path_uniq')
+        self.downloadPathUniq = CONFIG.get('honeypot', 'download_path_uniq')
 
         try:
             self.ttylogEnabled = CONFIG.getboolean('honeypot', 'ttylog')
@@ -45,23 +45,21 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         try:
             self.bytesReceivedLimit = CONFIG.getint('honeypot',
-                'download_limit_size')
+                                                    'download_limit_size')
         except:
             self.bytesReceivedLimit = 0
 
         if prot is protocol.HoneyPotExecProtocol:
-            self.type = 'e' # Execcmd
+            self.type = 'e'  # Execcmd
         else:
-            self.type = 'i' # Interactive
-
+            self.type = 'i'  # Interactive
 
     def getSessionId(self):
         """
         """
         transportId = self.transport.session.conn.transport.transportId
         channelId = self.transport.session.id
-        return (transportId, channelId)
-
+        return transportId, channelId
 
     def connectionMade(self):
         """
@@ -71,26 +69,25 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         if self.ttylogEnabled:
             self.ttylogFile = '%s/%s-%s-%s%s.log' % \
-                (self.ttylogPath, time.strftime('%Y%m%d-%H%M%S'),
-                transportId, channelId, self.type)
+                              (self.ttylogPath, time.strftime('%Y%m%d-%H%M%S'),
+                               transportId, channelId, self.type)
             ttylog.ttylog_open(self.ttylogFile, self.startTime)
             self.ttylogOpen = True
             self.ttylogSize = 0
             log.msg(eventid='cowrie.log.open',
-                ttylog=self.ttylogFile,
-                format='Opening TTY Log: %(ttylog)s')
+                    ttylog=self.ttylogFile,
+                    format='Opening TTY Log: %(ttylog)s')
 
         self.stdinlogFile = '%s/%s-%s-%s-stdin.log' % \
-            (self.downloadPath,
-            time.strftime('%Y%m%d-%H%M%S'), transportId, channelId)
+                            (self.downloadPath,
+                             time.strftime('%Y%m%d-%H%M%S'), transportId, channelId)
 
         if self.type == 'e':
             self.stdinlogOpen = True
-        else: #i
+        else:  # i
             self.stdinlogOpen = False
 
         insults.ServerProtocol.connectionMade(self)
-
 
     def write(self, data):
         """
@@ -101,11 +98,10 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         if self.ttylogEnabled and self.ttylogOpen:
             ttylog.ttylog_write(self.ttylogFile, len(data),
-                ttylog.TYPE_OUTPUT, time.time(), data)
+                                ttylog.TYPE_OUTPUT, time.time(), data)
             self.ttylogSize += len(data)
 
         insults.ServerProtocol.write(self, data)
-
 
     def dataReceived(self, data):
         """
@@ -113,9 +109,9 @@ class LoggingServerProtocol(insults.ServerProtocol):
         """
         self.bytesReceived += len(data)
         if self.bytesReceivedLimit \
-          and self.bytesReceived > self.bytesReceivedLimit:
+                and self.bytesReceived > self.bytesReceivedLimit:
             log.msg(format='Data upload limit reached')
-            #self.loseConnection()
+            # self.loseConnection()
             self.eofReceived()
             return
 
@@ -124,17 +120,16 @@ class LoggingServerProtocol(insults.ServerProtocol):
                 f.write(data)
         elif self.ttylogEnabled and self.ttylogOpen:
             ttylog.ttylog_write(self.ttylogFile, len(data),
-                ttylog.TYPE_INPUT, time.time(), data)
+                                ttylog.TYPE_INPUT, time.time(), data)
 
         # TODO: this may need to happen inside the shell rather than here to preserve bytes for redirection
-        #if isinstance(data, bytes):
+        # if isinstance(data, bytes):
         #    data = data.decode("utf-8")
 
         # prevent crash if something like this was passed:
         # echo cmd ; exit; \n\n
         if self.terminalProtocol:
             insults.ServerProtocol.dataReceived(self, data)
-
 
     def eofReceived(self):
         """
@@ -143,13 +138,11 @@ class LoggingServerProtocol(insults.ServerProtocol):
         if self.terminalProtocol:
             self.terminalProtocol.eofReceived()
 
-
     def loseConnection(self):
         """
         Override super to remove the terminal reset on logout
         """
         self.transport.loseConnection()
-
 
     def connectionLost(self, reason):
         """
@@ -192,7 +185,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                 if rp[1]:
                     url = rp[1]
                 else:
-                    url = rf[rf.find('redir_')+len('redir_'):]
+                    url = rf[rf.find('redir_') + len('redir_'):]
 
                 try:
                     if not os.path.exists(rf):
@@ -231,12 +224,11 @@ class LoggingServerProtocol(insults.ServerProtocol):
             self.redirFiles.clear()
 
         if self.ttylogEnabled and self.ttylogOpen:
-
             log.msg(eventid='cowrie.log.closed',
                     format='Closing TTY Log: %(ttylog)s after %(duration)d seconds',
                     ttylog=self.ttylogFile,
                     size=self.ttylogSize,
-                    duration=time.time()-self.startTime)
+                    duration=time.time() - self.startTime)
 
             ttylog.ttylog_close(self.ttylogFile, time.time())
             self.ttylogOpen = False
@@ -252,4 +244,4 @@ class LoggingTelnetServerProtocol(LoggingServerProtocol):
     def getSessionId(self):
         transportId = self.transport.session.transportId
         sn = self.transport.session.transport.transport.sessionno
-        return (transportId, sn)
+        return transportId, sn
