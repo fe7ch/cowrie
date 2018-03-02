@@ -40,9 +40,9 @@ class HoneyPotCommand(object):
         self.input_data = None  # used to store STDIN data passed via PIPE
         self.write = self.protocol.pp.outReceived
         self.errorWrite = self.protocol.pp.errReceived
-        self.download_path = self.protocol.cfg.get('honeypot', 'download_path')
+        self.download_path = CONFIG.get('honeypot', 'download_path')
         try:
-            self.download_path_uniq = self.protocol.cfg.get('honeypot', 'download_path_uniq')
+            self.download_path_uniq = CONFIG.get('honeypot', 'download_path_uniq')
         except:
             self.download_path_uniq = self.download_path
         # MS-DOS style redirect handling, inside the command
