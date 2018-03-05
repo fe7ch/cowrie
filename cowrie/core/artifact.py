@@ -44,10 +44,6 @@ class Artifact:
         self.fp = tempfile.NamedTemporaryFile(dir=self.artifactDir, delete=False)
         self.tempFilename = self.fp.name
 
-        oldumask = os.umask(0)
-        os.umask(oldumask)
-        os.chmod(self.fp.name, 0o777 & ~oldumask)
-
 
     def __enter__(self):
         """
@@ -88,6 +84,9 @@ class Artifact:
             os.remove(self.fp.name)
         else:
             os.rename(self.fp.name, shasumFilename)
+            umask = os.umask(0)
+            os.umask(umask)
+            os.chmod(shasumFilename, 0o666 & ~umask)
 
         return shasum, shasumFilename
 
