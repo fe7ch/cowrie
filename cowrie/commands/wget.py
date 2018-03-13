@@ -237,9 +237,15 @@ class command_wget(HoneyPotCommand):
             self.errorWrite('{} ERROR {}: {}\n'.format(time.strftime('%Y-%m-%d %T'), error.webStatus.decode(), error.webMessage.decode()))
         else:
             self.errorWrite('{} ERROR 404: Not Found.\n'.format(time.strftime('%Y-%m-%d %T')))
-        self.protocol.logDispatch(eventid='cowrie.session.file_download.failed',
-                                  format='Attempt to download file(s) from URL (%(url)s) failed',
-                                  url=self.url)
+
+        # prevent cowrie from crashing if the terminal have been already destroyed
+        try:
+            self.protocol.logDispatch(eventid='cowrie.session.file_download.failed',
+                                      format='Attempt to download file(s) from URL (%(url)s) failed',
+                                      url=self.url)
+        except:
+            pass
+
         self.exit()
 
 
