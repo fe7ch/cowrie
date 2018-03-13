@@ -19,6 +19,7 @@ from twisted.python import log, compat
 from cowrie.shell.honeypot import HoneyPotCommand
 from cowrie.shell.fs import *
 
+from cowrie.core.artifact import Artifact
 from cowrie.core.config import CONFIG
 
 """
@@ -129,9 +130,8 @@ class command_wget(HoneyPotCommand):
             self.limit_size = CONFIG.getint('honeypot', 'download_limit_size')
         self.downloadPath = CONFIG.get('honeypot', 'download_path')
 
-        self.artifactFile = tempfile.NamedTemporaryFile(dir=self.downloadPath, delete=False)
+        self.artifactFile = Artifact(outfile)
         # HTTPDownloader will close() the file object so need to preserve the name
-        self.artifactName = self.artifactFile.name
 
         d = self.download(url, outfile, self.artifactFile)
         if d:
@@ -191,38 +191,32 @@ class command_wget(HoneyPotCommand):
     def success(self, data, outfile):
         """
         """
-        if not os.path.isfile(self.artifactName):
-            log.msg("there's no file " + self.artifactName)
+        if not os.path.isfile(self.artifactFile.shasumFilename):
+            log.msg("there's no file " + self.artifactFile.shasumFilename)
             return
 
-        with open(self.artifactName, 'rb') as f:
-            filedata = f.read()
-            shasum = hashlib.sha256(filedata).hexdigest()
-            sha1sum = hashlib.sha1(filedata).hexdigest()
-            hash_path = os.path.join(self.download_path_uniq, shasum)
+        # log to cowrie.log
+        log.msg(format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
+                url=self.url,
+                outfile=self.artifactFile.shasumFilename,
+                shasum=self.artifactFile.shasum,
+                sha1=self.artifactFile.sha1sum)
 
-        # Rename temp file to the hash
-        if not os.path.exists(hash_path):
-            os.rename(self.artifactName, hash_path)
-            unique = True
-        else:
-            os.remove(self.artifactName)
-            log.msg("Not storing duplicate content " + shasum)
-            unique = False
-
+        # log to output modules
         self.protocol.logDispatch(eventid='cowrie.session.file_download',
                                   format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                                   url=self.url,
-                                  outfile=hash_path,
-                                  shasum=shasum,
-                                  sha1=sha1sum)
+                                  outfile=self.artifactFile.shasumFilename,
+                                  shasum=self.artifactFile.shasum,
+                                  sha1=self.artifactFile.sha1sum)
 
         # Update honeyfs to point to downloaded file or write to screen
         if outfile != '-':
-            self.fs.update_realfile(self.fs.getfile(outfile), hash_path)
+            self.fs.update_realfile(self.fs.getfile(outfile), self.artifactFile.shasumFilename)
             self.fs.chown(outfile, self.protocol.user.uid, self.protocol.user.gid)
         else:
-            self.write(filedata)
+            with open(self.artifactFile.shasumFilename, 'rb') as f:
+                self.write(f.read())
 
         self.exit()
 
@@ -234,7 +228,8 @@ class command_wget(HoneyPotCommand):
             self.errorWrite(errorMessage + '\n')
             # Real wget also adds this:
         if hasattr(error, 'webStatus') and hasattr(error, 'webMessage'):  # exceptions
-            self.errorWrite('{} ERROR {}: {}\n'.format(time.strftime('%Y-%m-%d %T'), error.webStatus.decode(), error.webMessage.decode()))
+            self.errorWrite('{} ERROR {}: {}\n'.format(time.strftime('%Y-%m-%d %T'), error.webStatus.decode(),
+                                                       error.webMessage.decode()))
         else:
             self.errorWrite('{} ERROR 404: Not Found.\n'.format(time.strftime('%Y-%m-%d %T')))
 
@@ -298,9 +293,9 @@ class HTTPProgressDownloader(client.HTTPDownloader):
             if self.totallength > 0:
                 if not self.quiet:
                     self.wget.errorWrite('Length: %d (%s) [%s]\n' % \
-                                    (self.totallength,
-                                     sizeof_fmt(self.totallength),
-                                     self.contenttype))
+                                         (self.totallength,
+                                          sizeof_fmt(self.totallength),
+                                          self.contenttype))
             else:
                 if not self.quiet:
                     self.wget.errorWrite('Length: unspecified [{}]\n'.format(self.contenttype))
@@ -354,9 +349,9 @@ class HTTPProgressDownloader(client.HTTPDownloader):
             return client.HTTPDownloader.pageEnd(self)
         if not self.quiet:
             self.wget.errorWrite('\r100%%[%s] %s %dK/s' % \
-                            ('%s>' % (38 * '='),
-                             splitthousands(str(int(self.totallength))).ljust(12),
-                             self.speed / 1000))
+                                 ('%s>' % (38 * '='),
+                                  splitthousands(str(int(self.totallength))).ljust(12),
+                                  self.speed / 1000))
             self.wget.errorWrite('\n\n')
             self.wget.errorWrite(
                 '%s (%d KB/s) - `%s\' saved [%d/%d]\n\n' %
