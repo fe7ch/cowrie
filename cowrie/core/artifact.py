@@ -64,7 +64,6 @@ class Artifact:
     def write(self, bytes):
         """
         """
-        print('Artifact::%s::write %d bytes' % (self.label, len(bytes)))
         self.fp.write(bytes)
 
 
