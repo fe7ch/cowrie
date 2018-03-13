@@ -52,6 +52,8 @@ Currently defined functions:
 
 class command_busybox(HoneyPotCommand):
     """
+    Fixed by Ivan Korolev (@fe7ch)
+    The command should never call self.exit(), cause it will corrupt cmdstack
     """
 
     def help(self):
@@ -72,30 +74,25 @@ class command_busybox(HoneyPotCommand):
         cmd = self.args[0]
         cmdclass = self.protocol.getCommand(cmd, self.environ['PATH'].split(':'))
         if cmdclass:
+            # log found command
             log.msg(eventid='cowrie.command.success', input=line, format='Command found: %(input)s')
-            command = StdOutStdErrEmulationProtocol(self.protocol, cmdclass, self.args[1:], self.input_data, None)
-            # Workaround for the issue: #352
-            # https://github.com/fe7ch/cowrie/commit/9b33509
-            # For an unknown reason inserted command won't be invoked later, if it's followed by an invalid command
-            # so lets just call the command in question
 
-            if hasattr(self, 'outfile') and self.outfile:
-                if self.b_append:
-                    self.args.append('>>')
-                else:
-                    self.args.append('>')
+            # prepare command arguments
+            pp = StdOutStdErrEmulationProtocol(self.protocol, cmdclass, self.protocol.pp.cmdargs[1:], self.input_data,
+                                               None)
 
-                self.args.append(self.outfile)
+            # insert the command as we do when chaining commands with pipes
+            self.protocol.pp.insert_command(pp)
 
-            # self.protocol.pp.insert_command(command)
-            self.protocol.call_command(command, cmdclass, *self.args[1:])
+            # invoke inserted command
+            self.protocol.pp.outConnectionLost()
 
             # Place this here so it doesn't write out only if last statement
-
             if self.input_data:
                 self.write(self.input_data)
         else:
             self.write('{}: applet not found\n'.format(cmd))
+
 
 commands['busybox'] = command_busybox
 commands['/bin/busybox'] = command_busybox
