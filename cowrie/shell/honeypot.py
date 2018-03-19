@@ -60,8 +60,8 @@ class HoneyPotCommand(object):
             del self.args[index:]
             p = self.fs.getfile(self.outfile)
             if not p or not p[fs.A_REALFILE] or p[fs.A_REALFILE].startswith('honeyfs') or not self.b_append:
-                tmp_fname = '%s-%s-%s-redir_%s' % \
-                            (time.strftime('%Y%m%d-%H%M%S%f'),
+                tmp_fname = '%s-%s-%s-%s-redir_%s' % \
+                            (time.strftime('%Y%m%d-%H%M%S'), os.urandom(1),
                              self.protocol.getProtoTransport().transportId,
                              self.protocol.terminal.transport.session.id,
                              re.sub('[^A-Za-z0-9]', '_', self.outfile))
