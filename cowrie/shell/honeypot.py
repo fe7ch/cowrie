@@ -12,6 +12,7 @@ import re
 import stat
 import copy
 import time
+import random
 import sys
 
 from twisted.python import log, failure
@@ -60,8 +61,8 @@ class HoneyPotCommand(object):
             del self.args[index:]
             p = self.fs.getfile(self.outfile)
             if not p or not p[fs.A_REALFILE] or p[fs.A_REALFILE].startswith('honeyfs') or not self.b_append:
-                tmp_fname = '%s-%s-%s-%s-redir_%s' % \
-                            (time.strftime('%Y%m%d-%H%M%S'), os.urandom(1),
+                tmp_fname = '%s-%d%d-%s-%s-redir_%s' % \
+                            (time.strftime('%Y%m%d-%H%M%S'), random.randint(48, 57), random.randint(48, 57),
                              self.protocol.getProtoTransport().transportId,
                              self.protocol.terminal.transport.session.id,
                              re.sub('[^A-Za-z0-9]', '_', self.outfile))
