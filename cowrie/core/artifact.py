@@ -39,11 +39,15 @@ class Artifact:
         """
         """
         self.label = label
-        self.artifactDir = CONFIG.get('honeypot', 'download_path_uniq')
+        if CONFIG.has_option('honeypot', 'download_path_uniq'):
+            self.artifactDir = CONFIG.get('honeypot', 'download_path_uniq')
+        else:
+            self.artifactDir = CONFIG.get('honeypot', 'download_path')
         self.artifactDirTmp = CONFIG.get('honeypot', 'download_path')
 
         self.fp = tempfile.NamedTemporaryFile(dir=self.artifactDirTmp, delete=False)
         self.tempFilename = self.fp.name
+        self.closed = False
 
         self.shasum = ''
         self.sha1sum = ''
@@ -80,6 +84,7 @@ class Artifact:
         self.fp.seek(0)
         data = self.fp.read()
         self.fp.close()
+        self.closed = True
         self.shasum = hashlib.sha256(data).hexdigest()
         self.sha1sum = hashlib.sha1(data).hexdigest()
         self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
