@@ -68,6 +68,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
         if self.type == 'e':
             cmd = self.terminalProtocol.execcmd.encode('utf8')
             ttylog.ttylog_write(self.ttylogFile, len(cmd), ttylog.TYPE_INTERACT, time.time(), cmd)
+
     def write(self, data):
         if self.ttylogEnabled and self.ttylogOpen:
             ttylog.ttylog_write(self.ttylogFile, len(data), ttylog.TYPE_OUTPUT, time.time(), data)
@@ -128,11 +129,9 @@ class LoggingServerProtocol(insults.ServerProtocol):
                     log.msg("Not storing duplicate content " + shasum)
                 else:
                     os.rename(self.stdinlogFile, shasumfile)
-                        duplicate = False
 
                 log.msg(eventid='cowrie.session.file_download',
                         format='Saved stdin contents with SHA-256 %(shasum)s to %(outfile)s',
-                        duplicate=duplicate,
                         outfile=shasumfile,
                         shasum=shasum,
                         sha1=sha1sum,
@@ -175,11 +174,9 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         log.msg("Not storing duplicate content " + shasum)
                     else:
                         os.rename(rf, shasumfile)
-                            duplicate = False
 
                     log.msg(eventid='cowrie.session.file_download',
                             format='Saved redir contents with SHA-256 %(shasum)s to %(outfile)s',
-                            duplicate=duplicate,
                             outfile=shasumfile,
                             shasum=shasum,
                             sha1=sha1sum,

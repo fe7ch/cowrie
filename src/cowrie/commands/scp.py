@@ -120,15 +120,12 @@ class command_scp(HoneyPotCommand):
             # If we have content already, delete temp file
             if not os.path.exists(hash_path):
                 os.rename(self.safeoutfile, hash_path)
-                duplicate = False
             else:
                 os.remove(self.safeoutfile)
-                duplicate = True
 
             log.msg(format='SCP Uploaded file \"%(filename)s\" to %(outfile)s',
                     eventid='cowrie.session.file_upload',
                     filename=os.path.basename(fname),
-                    duplicate=duplicate,
                     url=fname,
                     outfile=shasum,
                     shasum=shasum,
