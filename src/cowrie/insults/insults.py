@@ -24,6 +24,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
     ttylogOpen = False
     ttylogPath = CowrieConfig().get('honeypot', 'ttylog_path')
     downloadPath = CowrieConfig().get('honeypot', 'download_path')
+    downloadPathUniq = CowrieConfig().get('honeypot', 'download_path_uniq')
     ttylogEnabled = CowrieConfig().getboolean('honeypot', 'ttylog', fallback=True)
     bytesReceivedLimit = CowrieConfig().getint('honeypot', 'download_limit_size', fallback=0)
     bytesReceived = 0
@@ -31,7 +32,6 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
     def __init__(self, prot=None, *a, **kw):
         insults.ServerProtocol.__init__(self, prot, *a, **kw)
-        self.downloadPathUniq = CONFIG.get('honeypot', 'download_path_uniq')
 
         if prot is protocol.HoneyPotExecProtocol:
             self.type = 'e'  # Execcmd
