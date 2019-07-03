@@ -167,7 +167,10 @@ class command_iptables(HoneyPotCommand):
                     "OUTPUT": []
                 },
                 "filter": {
-                    "INPUT": [],
+                    "INPUT": [
+                        ('ACCEPT', 'tcp', '--', 'anywhere', 'anywhere', 'tcp', 'dpt:ssh'),
+                        ('DROP', 'all', '--', 'anywhere', 'anywhere', '', '')
+                    ],
                     "FORWARD": [],
                     "OUTPUT": []
                 },

@@ -1,4 +1,4 @@
-from __future__ import division, absolute_import
+from __future__ import absolute_import, division
 
 import getopt
 
@@ -15,15 +15,12 @@ class command_base64(HoneyPotCommand):
     """
 
     def start(self):
-        """
-        """
-
         self.mode = 'e'
         self.ignore = False
 
         try:
             optlist, args = getopt.getopt(self.args, 'diw:', ['version', 'help', 'decode', 'ignore-garbage', 'wrap='])
-        except getopt.GetoptError as err:
+        except getopt.GetoptError:
             self.errorWrite('Unrecognized option\n')
             self.exit()
             return
@@ -108,7 +105,7 @@ Try 'base64 --help' for more information.
         else:
             try:
                 self.write(s.decode('base64'))
-            except:
+            except Exception:
                 self.errorWrite("base64: invalid input\n")
 
     def lineReceived(self, line):
@@ -124,3 +121,4 @@ Try 'base64 --help' for more information.
 
 
 commands['/usr/bin/base64'] = command_base64
+commands['base64'] = command_base64
