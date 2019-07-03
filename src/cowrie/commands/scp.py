@@ -132,7 +132,7 @@ class command_scp(HoneyPotCommand):
                     url=fname,
                     outfile=shasum,
                     shasum=shasum,
-                    sha1=sha1sum)
+                    sha1=sha1sum,
                     destfile=fname)
 
             self.safeoutfile = None

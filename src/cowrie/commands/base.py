@@ -192,7 +192,7 @@ class command_printf(HoneyPotCommand):
                 if s.endswith('\\c'):
                     s = s[:-2]
 
-                self.write(codecs.escape_devode(s)[0])
+                self.write(codecs.escape_decode(s)[0])
 
 
 commands['/usr/bin/printf'] = command_printf
@@ -226,6 +226,7 @@ commands['/usr/bin/clear'] = command_clear
 commands['clear'] = command_clear
 commands['/usr/bin/reset'] = command_clear
 commands['reset'] = command_clear
+
 
 class command_hostname(HoneyPotCommand):
 
@@ -581,6 +582,7 @@ commands['poweroff'] = command_shutdown
 commands['/sbin/halt'] = command_shutdown
 commands['halt'] = command_shutdown
 
+
 class command_reboot(HoneyPotCommand):
 
 
@@ -803,6 +805,7 @@ class command_chattr(HoneyPotCommand):
         return
 
 
+commands['/usr/bin/chattr'] = command_chattr
 commands['chattr'] = command_chattr
 
 
@@ -839,8 +842,6 @@ commands['/bin/chown'] = command_nop
 commands['chown'] = command_nop
 commands['/bin/chgrp'] = command_nop
 commands['chgrp'] = command_nop
-commands['/usr/bin/chattr'] = command_nop
-commands['chattr'] = command_nop
 commands[':'] = command_nop
 commands['do'] = command_nop
 commands['done'] = command_nop

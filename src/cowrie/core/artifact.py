@@ -37,11 +37,11 @@ class Artifact:
 
     def __init__(self, label):
         self.label = label
-        if CONFIG.has_option('honeypot', 'download_path_uniq'):
-            self.artifactDir = CONFIG.get('honeypot', 'download_path_uniq')
+        if CowrieConfig().has_option('honeypot', 'download_path_uniq'):
+            self.artifactDir = CowrieConfig().get('honeypot', 'download_path_uniq')
         else:
-            self.artifactDir = CONFIG.get('honeypot', 'download_path')
-        self.artifactDirTmp = CONFIG.get('honeypot', 'download_path')
+            self.artifactDir = CowrieConfig().get('honeypot', 'download_path')
+        self.artifactDirTmp = CowrieConfig().get('honeypot', 'download_path')
 
         self.fp = tempfile.NamedTemporaryFile(dir=self.artifactDirTmp, delete=False)
         self.tempFilename = self.fp.name
