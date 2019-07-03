@@ -59,24 +59,14 @@ class UserDB(object):
                     self.adduser(login, password)
 
     def checklogin(self, thelogin, thepasswd, src_ip='0.0.0.0'):
+        for credentials, policy in self.userdb.items():
+            login, passwd = credentials
 
+            if self.match_rule(login, thelogin):
+                if self.match_rule(passwd, thepasswd):
+                    return policy
 
-        blacklist = ['http://', 'http_', 'socks5:', 'socks4:', 'User-Agent', 'Content-Type', 'Proxy-Connection',
-                     'Accept:', 'Content-Length', 'Accept-', 'Expect', 'Continue', 'CONNECT', 'Connection']
-
-        for i in blacklist:
-            if (thelogin and i in thelogin) or (thepasswd and i in thepasswd):
-                return False
-
-        return True
-
-        # for (login, passwd) in self.userdb:
-        #     # Explicitly fail on !password
-        #     if login == thelogin and passwd == '!' + thepasswd:
-        #         return False
-        #     if login == thelogin and passwd in (thepasswd, '*'):
-        #         return True
-        # return False
+        return False
 
     def match_rule(self, rule, input):
         if type(rule) is bytes:
