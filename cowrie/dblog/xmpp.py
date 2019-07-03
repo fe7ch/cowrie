@@ -11,9 +11,6 @@ from twisted.words.protocols.jabber.jid import JID
 from wokkel.xmppim import AvailablePresence
 from wokkel import muc
 
-from cowrie.core.config import CONFIG
-
-
 class XMPPLoggerProtocol(muc.MUCClient):
 
     def __init__(self, rooms, server, nick):
@@ -59,7 +56,6 @@ from wokkel.client import XMPPClient
 from cowrie.core import dblog
 from twisted.words.xish import domish
 
-
 class DBLogger(dblog.DBLogger):
     def start(self, cfg):
         from random import choice
@@ -86,8 +82,8 @@ class DBLogger(dblog.DBLogger):
     def run(self, application, jidstr, password, muc, channels, anon=True):
 
         self.xmppclient = XMPPClient(JID(jidstr), password)
-        if CONFIG.has_option('database_xmpp', 'debug') and \
-                CONFIG.getboolean('database_xmpp', 'debug') == True:
+        if self.cfg.has_option('database_xmpp', 'debug') and \
+                self.cfg.getboolean('database_xmpp', 'debug') == True:
             self.xmppclient.logTraffic = True # DEBUG HERE
         (user, host, resource) = jid.parse(jidstr)
         self.muc = XMPPLoggerProtocol(

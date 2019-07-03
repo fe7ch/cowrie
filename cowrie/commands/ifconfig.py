@@ -11,7 +11,7 @@ commands = {}
 class command_ifconfig(HoneyPotCommand):
 
     def call(self):
-        l = """eth0      Link encap:Ethernet  HWaddr ac:1f:6b:01:e1:14
+        l = """eth0      Link encap:Ethernet  HWaddr 04:01:16:df:2d:01
           inet addr:%s  Bcast:%s.255  Mask:255.255.255.0
           inet6 addr: fe80::601:16ff:fedf:2d01/64 Scope:Link
           UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
