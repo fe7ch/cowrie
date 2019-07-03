@@ -190,16 +190,8 @@ class HoneyPotBaseProtocol(insults.TerminalProtocol, TimeoutMixin):
         self.cmdstack.append(obj)
         obj.start()
 
-        # if we had more than one command to execute, call the next command
         if self.pp:
             self.pp.outConnectionLost()
-
-        # it's tricky.
-        # we'll reach this point only when all chained commands were executed (last-in-first-out)
-        # so we should check that cmdstack wasn't deleted by one of the previous commands
-        if hasattr(self, 'cmdstack') and not len(self.cmdstack):
-            stat = failure.Failure(error.ProcessDone(status=""))
-            self.terminal.transport.processEnded(stat)
 
     def uptime(self):
         """
