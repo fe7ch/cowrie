@@ -1,0 +1,6 @@
+include *.rst
+include etc/cowrie.cfg.dist
+recursive-include src/twisted *.py
+recursive-include src/cowrie *.py
+graft honeyfs
+graft share/cowrie
