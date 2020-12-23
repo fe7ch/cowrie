@@ -186,7 +186,9 @@ class command_wget(HoneyPotCommand):
                                   format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                                   url=self.url,
                                   outfile=self.artifactFile.shasumFilename,
-                                  shasum=self.artifactFile.shasum)
+                                  shasum=self.artifactFile.shasum,
+                                  sha1=self.artifactFile.sha1sum,
+                                  destfile=outfile)
 
         # Update honeyfs to point to downloaded file or write to screen
         if outfile != '-':

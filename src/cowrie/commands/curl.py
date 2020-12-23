@@ -286,7 +286,8 @@ Options: (H) means HTTP/HTTPS only, (F) means FTP only
                                   format='Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s',
                                   url=self.url,
                                   outfile=self.artifactFile.shasumFilename,
-                                  shasum=self.artifactFile.shasum)
+                                  shasum=self.artifactFile.shasum,
+                                  sha1=self.artifactFile.sha1sum)
 
         # Update the honeyfs to point to downloaded file if output is a file
         if outfile:

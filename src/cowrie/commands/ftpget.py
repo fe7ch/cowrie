@@ -185,6 +185,7 @@ Download a file via FTP
                                   url=self.url_log,
                                   outfile=self.artifactFile.shasumFilename,
                                   shasum=self.artifactFile.shasum,
+                                  sha1=self.artifactFile.sha1sum,
                                   destfile=self.local_file)
 
         # Update the honeyfs to point to downloaded file

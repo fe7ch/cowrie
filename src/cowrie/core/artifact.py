@@ -37,12 +37,18 @@ class Artifact:
 
     def __init__(self, label):
         self.label = label
+        if CowrieConfig().has_option('honeypot', 'download_path_uniq'):
+            self.artifactDir = CowrieConfig().get('honeypot', 'download_path_uniq')
+        else:
+            self.artifactDir = CowrieConfig().get('honeypot', 'download_path')
+        self.artifactDirTmp = CowrieConfig().get('honeypot', 'download_path')
 
-        self.fp = tempfile.NamedTemporaryFile(dir=self.artifactDir, delete=False)
+        self.fp = tempfile.NamedTemporaryFile(dir=self.artifactDirTmp, delete=False)
         self.tempFilename = self.fp.name
         self.closed = False
 
         self.shasum = ''
+        self.sha1sum = ''
         self.shasumFilename = ''
 
     def __enter__(self):
@@ -69,6 +75,7 @@ class Artifact:
         self.closed = True
 
         self.shasum = hashlib.sha256(data).hexdigest()
+        self.sha1sum = hashlib.sha1(data).hexdigest()
         self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
 
         if os.path.exists(self.shasumFilename):

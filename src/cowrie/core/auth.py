@@ -18,12 +18,7 @@ from twisted.python import log
 from cowrie.core.config import CowrieConfig
 
 _USERDB_DEFAULTS = [
-    'root:x:!root',
-    'root:x:!123456',
-    'root:x:!/honeypot/i',
-    'root:x:*',
-    'phil:x:*',
-    'phil:x:fout',
+    'root:x:*'
 ]
 
 
@@ -59,14 +54,15 @@ class UserDB(object):
                     self.adduser(login, password)
 
     def checklogin(self, thelogin, thepasswd, src_ip='0.0.0.0'):
-        for credentials, policy in self.userdb.items():
-            login, passwd = credentials
-
-            if self.match_rule(login, thelogin):
-                if self.match_rule(passwd, thepasswd):
-                    return policy
-
-        return False
+        return True
+        # for credentials, policy in self.userdb.items():
+        #     login, passwd = credentials
+        #
+        #     if self.match_rule(login, thelogin):
+        #         if self.match_rule(passwd, thepasswd):
+        #             return policy
+        #
+        # return False
 
     def match_rule(self, rule, input):
         if type(rule) is bytes:

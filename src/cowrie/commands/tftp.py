@@ -77,6 +77,7 @@ class command_tftp(HoneyPotCommand):
                                       url=url,
                                       outfile=self.artifactFile.shasumFilename,
                                       shasum=self.artifactFile.shasum,
+                                      sha1=self.artifactFile.sha1sum,
                                       destfile=self.file_to_get)
 
             # Update the honeyfs to point to downloaded file
@@ -93,32 +94,35 @@ class command_tftp(HoneyPotCommand):
         parser.add_argument("-p")
         parser.add_argument("-r")
 
-        args = parser.parse_args(self.args)
-        if args.c:
-            if len(args.c) > 1:
-                self.file_to_get = args.c[1]
-                if args.hostname is None:
-                    self.exit()
-                    return
-                self.hostname = args.hostname
-        elif args.r:
-            self.file_to_get = args.r
-            self.hostname = args.g
-        else:
-            self.write('usage: tftp [-h] [-c C C] [-l L] [-g G] [-p P] [-r R] [hostname]\n')
-            self.exit()
-            return
+        try:
+            args = parser.parse_args(self.args)
+            if args.c:
+                if len(args.c) > 1:
+                    self.file_to_get = args.c[1]
+                    if args.hostname is None:
+                        self.exit()
+                        return
+                    self.hostname = args.hostname
+            elif args.r:
+                self.file_to_get = args.r
+                self.hostname = args.g
+            else:
+                self.write('usage: tftp [-h] [-c C C] [-l L] [-g G] [-p P] [-r R] [hostname]\n')
+                self.exit()
+                return
 
-        if self.hostname is None:
-            self.exit()
-            return
+            if self.hostname is None:
+                self.exit()
+                return
 
-        if self.hostname.find(':') != -1:
-            host, port = self.hostname.split(':')
-            self.hostname = host
-            self.port = int(port)
+            if self.hostname.find(':') != -1:
+                host, port = self.hostname.split(':')
+                self.hostname = host
+                self.port = int(port)
 
-        self.makeTftpRetrieval()
+            self.makeTftpRetrieval()
+        except Exception as e:
+            log.err(str(e))
         self.exit()
 
 

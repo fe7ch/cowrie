@@ -118,8 +118,10 @@ class LoggingServerProtocol(insults.ServerProtocol):
         if self.stdinlogOpen:
             try:
                 with open(self.stdinlogFile, 'rb') as f:
-                    shasum = hashlib.sha256(f.read()).hexdigest()
-                    shasumfile = os.path.join(self.downloadPath, shasum)
+                    data = f.read()
+                    shasum = hashlib.sha256(data).hexdigest()
+                    sha1sum = hashlib.sha1(data).hexdigest()
+                    shasumfile = os.path.join(self.downloadPathUniq, shasum)
                     if os.path.exists(shasumfile):
                         os.remove(self.stdinlogFile)
                         duplicate = True
@@ -157,7 +159,9 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         continue
 
                     with open(rf, 'rb') as f:
-                        shasum = hashlib.sha256(f.read()).hexdigest()
+                        data = f.read()
+                        shasum = hashlib.sha256(data).hexdigest()
+                        sha1sum = hashlib.sha1(data).hexdigest()
                         shasumfile = os.path.join(self.downloadPath, shasum)
                         if os.path.exists(shasumfile):
                             os.remove(rf)
@@ -170,6 +174,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                             duplicate=duplicate,
                             outfile=shasumfile,
                             shasum=shasum,
+                            sha1=sha1sum,
                             destfile=url)
                 except IOError:
                     pass
