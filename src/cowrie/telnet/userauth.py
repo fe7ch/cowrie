@@ -9,7 +9,6 @@ from __future__ import absolute_import, division
 
 import struct
 
-
 from twisted.conch.telnet import AuthenticatingTelnetProtocol, ITelnetProtocol
 from twisted.conch.telnet import ECHO, LINEMODE, NAWS, SGA
 from twisted.python import log
@@ -29,10 +28,10 @@ class HoneyPotTelnetAuthProtocol(AuthenticatingTelnetProtocol):
     windowSize = [40, 80]
 
     def connectionMade(self):
-        # self.transport.negotiationMap[NAWS] = self.telnet_NAWS
+        self.transport.negotiationMap[NAWS] = self.telnet_NAWS
         # Initial option negotation. Want something at least for Mirai
-        # for opt in (NAWS,):
-        #    self.transport.doChain(opt).addErrback(log.err)
+        for opt in (NAWS,):
+            self.transport.doChain(opt).addErrback(log.err)
 
         # I need to doubly escape here since my underlying
         # CowrieTelnetTransport hack would remove it and leave just \n
