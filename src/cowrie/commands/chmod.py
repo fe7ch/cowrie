@@ -69,12 +69,12 @@ class command_chmod(HoneyPotCommand):
             self.write('chmod: missing operand\n' + TRY_CHMOD_HELP_MSG)
             return
         if mode and not files:
-            self.write('chmod: missing operand after ‘{}’\n'.format(mode) + TRY_CHMOD_HELP_MSG)
+            self.write('chmod: missing operand after `{}`\n'.format(mode) + TRY_CHMOD_HELP_MSG)
             return
 
         # mode has to match the regex
         if not re.fullmatch(MODE_REGEX, mode):
-            self.write('chmod: invalid mode: ‘{}’\n'.format(mode) + TRY_CHMOD_HELP_MSG)
+            self.write('chmod: invalid mode: `{}`\n'.format(mode) + TRY_CHMOD_HELP_MSG)
             return
 
         # go through the list of files and check whether they exist
