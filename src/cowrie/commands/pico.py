@@ -1,8 +1,28 @@
+import getopt
+
 from cowrie.shell.command import HoneyPotCommand
 
 
 class command_pico(HoneyPotCommand):
-    def help(self) -> None:
+    """Pico command.
+
+    /usr/bin/pico -> /etc/alternatives/pico -> /bin/nano
+    """
+
+    def call(self) -> None:
+        try:
+            opts, args = getopt.getopt(self.args, "h", ["help"])
+        except getopt.GetoptError as e:
+            self.errorWrite("pico: unrecognized option '--{}'\n".format(e.opt))
+            self._help()
+            return
+
+        for opt in opts:
+            if opt in ("-h", "--help"):
+                self._help()
+                break
+
+    def _help(self) -> None:
         lines = (
             "Usage: nano [OPTIONS] [[+LINE[,COLUMN]] FILE]...",
             "",
@@ -68,10 +88,8 @@ class command_pico(HoneyPotCommand):
         for line in lines:
             self.write(line + "\n")
 
-    def call(self) -> None:
-        pass
-
 
 commands = {
     "pico": command_pico,
+    "/usr/bin/pico": command_pico,
 }
