@@ -12,6 +12,7 @@ import re
 import stat
 import sys
 import time
+from typing import TYPE_CHECKING
 
 from twisted.internet import error
 from twisted.python import failure, log
@@ -25,6 +26,9 @@ if sys.version_info.major >= 3 and sys.version_info.minor >= 6:
 else:
     from cowrie.shell import shlex
 
+if TYPE_CHECKING:
+    from cowrie.shell.fs import HoneyPotFilesystem
+
 
 class HoneyPotCommand(object):
     """
@@ -35,7 +39,7 @@ class HoneyPotCommand(object):
         self.protocol = protocol
         self.args = list(args)
         self.environ = self.protocol.cmdstack[0].environ
-        self.fs = self.protocol.fs
+        self.fs: HoneyPotFilesystem = self.protocol.fs
         self.data = None  # output data
         self.input_data = None  # used to store STDIN data passed via PIPE
         self.writefn = self.protocol.pp.outReceived

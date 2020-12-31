@@ -115,11 +115,11 @@ class command_free(HoneyPotCommand):
 
     def _read_meminfo(self) -> Dict[str, int]:
         r = {}
-        with open("/proc/meminfo", "r") as f:  # TODO:
-            for line in f.readlines():
-                key, value = line.split(":")
-                if key in command_free.MEMINFO_KEYS:
-                    r[key] = int(value[:value.rfind(" ")])
+        data = self.fs.file_contents("/proc/meminfo")
+        for line in data.decode().splitlines():
+            key, value = line.split(":")
+            if key in command_free.MEMINFO_KEYS:
+                r[key] = int(value[:value.rfind(" ")])
         r["MemUsed"] = r["MemTotal"] - r["MemFree"]
         r["SwapUsed"] = r["SwapTotal"] - r["SwapFree"]
         return r
