@@ -28,6 +28,7 @@ __all__ = [
     'nc',
     'netstat',
     'nohup',
+    'nproc',
     'perl',
     'pico',
     'ping',
