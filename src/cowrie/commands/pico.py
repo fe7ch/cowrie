@@ -3,7 +3,7 @@ import getopt
 from cowrie.shell.command import HoneyPotCommand
 
 
-class Command_pico(HoneyPotCommand):
+class PicoCmd(HoneyPotCommand):
     HELP = ("Usage: nano [OPTIONS] [[+LINE[,COLUMN]] FILE]...\n"
             "\n"
             "To place the cursor on a specific line of a file, put the line number with\n"
@@ -88,13 +88,13 @@ class Command_pico(HoneyPotCommand):
             return
 
     def _help(self) -> None:
-        self.write(Command_pico.HELP)
+        self.write(PicoCmd.HELP)
 
     def _version(self) -> None:
-        self.write(Command_pico.VERSION)
+        self.write(PicoCmd.VERSION)
 
 
 commands = {
-    "pico": Command_pico,
-    "/usr/bin/pico": Command_pico,
+    "pico": PicoCmd,
+    "/usr/bin/pico": PicoCmd,
 }
