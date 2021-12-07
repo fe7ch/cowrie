@@ -19,7 +19,7 @@ from __future__ import annotations
 import hashlib
 import os
 import tempfile
-from typing import Optional, Tuple, Type, TYPE_CHECKING
+from typing import Any, Optional, Tuple, Type, TYPE_CHECKING
 
 from twisted.python import log
 
@@ -43,7 +43,7 @@ class Artifact:
         self.shasum: str = ""
         self.shasumFilename: str = ""
 
-    def __enter__(self) -> tempfile.NamedTemporaryFile:
+    def __enter__(self) -> Any:
         return self.fp
 
     def __exit__(
