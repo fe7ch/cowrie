@@ -1,40 +1,35 @@
 # Copyright (c) 2016 Michel Oosterhof <michel@oosterhof.net>
-
-"""
-This module contains code to handling saving of honeypot artifacts
+"""This module contains code to handling saving of honeypot artifacts
 These will typically be files uploaded to the honeypot and files
 downloaded inside the honeypot, or input being piped in.
 
 Code behaves like a normal Python file handle.
 
 Example:
-
     with Artifact(name) as f:
         f.write("abc")
 
 or:
-
     g = Artifact("testme2")
     g.write("def")
     g.close()
-
 """
-
 from __future__ import annotations
 
 import hashlib
 import os
 import tempfile
-from types import TracebackType
-from typing import Any, Optional
+from typing import Optional, Tuple, Type, TYPE_CHECKING
 
 from twisted.python import log
 
 from cowrie.core.config import CowrieConfig
 
+if TYPE_CHECKING:
+    from types import TracebackType
+
 
 class Artifact:
-
     artifactDir: str = CowrieConfig.get("honeypot", "download_path")
 
     def __init__(self, label: str) -> None:
@@ -47,36 +42,39 @@ class Artifact:
         self.shasum: str = ""
         self.shasumFilename: str = ""
 
-    def __enter__(self) -> Any:
+    def __enter__(self) -> tempfile.NamedTemporaryFile:
         return self.fp
 
     def __exit__(
-        self,
-        etype: Optional[type[BaseException]],
-        einst: Optional[BaseException],
-        etrace: Optional[TracebackType],
+            self,
+            etype: Optional[Type[BaseException]],
+            einst: Optional[BaseException],
+            etrace: Optional[TracebackType],
     ) -> bool:
         self.close()
         return True
 
-    def write(self, bytes: bytes) -> None:
-        self.fp.write(bytes)
+    def write(self, data: bytes) -> None:
+        self.fp.write(data)
 
-    def fileno(self) -> Any:
+    def fileno(self) -> int:
         return self.fp.fileno()
 
-    def close(self, keepEmpty: bool = False) -> Optional[tuple[str, str]]:
-        size: int = self.fp.tell()
-        if size == 0 and not keepEmpty:
+    def close(self, keep_empty: bool = False) -> Optional[Tuple[str, str]]:
+        if self.fp.tell() == 0 and not keep_empty:
             os.remove(self.fp.name)
             return None
 
         self.fp.seek(0)
-        data = self.fp.read()
+
+        sha256 = hashlib.sha256()
+        for chunk in iter(lambda: self.fp.read(4096), b""):
+            sha256.update(chunk)
+
         self.fp.close()
         self.closed = True
 
-        self.shasum = hashlib.sha256(data).hexdigest()
+        self.shasum = sha256.hexdigest()
         self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
 
         if os.path.exists(self.shasumFilename):
