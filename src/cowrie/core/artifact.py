@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 class Artifact:
     artifactDir: str = CowrieConfig.get("honeypot", "download_path")
+    artifactDirUniq: str = CowrieConfig.get("honeypot", "download_path_uniq")
 
     def __init__(self, label: str) -> None:
         self.label: str = label
@@ -75,7 +76,7 @@ class Artifact:
         self.closed = True
 
         self.shasum = sha256.hexdigest()
-        self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
+        self.shasumFilename = os.path.join(self.artifactDirUniq, self.shasum)
 
         if os.path.exists(self.shasumFilename):
             log.msg("Not storing duplicate content " + self.shasum)
