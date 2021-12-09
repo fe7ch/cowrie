@@ -56,7 +56,7 @@ class Command_awk(HoneyPotCommand):
         # first argument is program (generally between quotes if contains spaces)
         # second and onward arguments are files to operate on
 
-        if len(args) == 0:
+        if len(args) == 0 or len(args) == 1:
             self.help()
             self.exit()
             return
