@@ -145,11 +145,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
         """
         if self.stdinlogOpen:
             try:
-                with open(self.stdinlogFile, "rb") as f:
-                    sha256 = hashlib.sha256()
-                    for chunk in iter(lambda: f.read(4096), b""):
-                        sha256.update(chunk)
-                    shasum = sha256.hexdigest()
+                shasum = calc_sha256(self.stdinlogFile)
                 shasumfile = os.path.join(self.downloadPath, shasum)
                 if os.path.exists(shasumfile):
                     os.remove(self.stdinlogFile)
@@ -189,11 +185,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         os.remove(rf)
                         continue
 
-                    with open(rf, "rb") as f:
-                        sha256 = hashlib.sha256()
-                        for chunk in iter(lambda: f.read(4096), b""):
-                            sha256.update(chunk)
-                        shasum = sha256.hexdigest()
+                    shasum = calc_sha256(rf)
                     shasumfile = os.path.join(self.downloadPath, shasum)
                     if os.path.exists(shasumfile):
                         os.remove(rf)
@@ -252,3 +244,12 @@ class LoggingTelnetServerProtocol(LoggingServerProtocol):
         transportId = self.transport.session.transportId
         sn = self.transport.session.transport.transport.sessionno
         return (transportId, sn)
+
+
+def calc_sha256(path: str, block_size: int = 4096) -> str:
+    """Calculate sha256 of a file."""
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for chunk in iter(lambda: f.read(block_size), b""):
+            h.update(chunk)
+    return h.hexdigest()
