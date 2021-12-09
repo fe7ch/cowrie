@@ -98,6 +98,10 @@ Try 'base64 --help' for more information.
                 self.exit()
                 return
 
+            elif len(args) < 1:
+                self.exit()
+                return
+
             pname = self.fs.resolve_path(args[0], self.protocol.cwd)
             if not self.fs.isdir(pname):
                 try:
