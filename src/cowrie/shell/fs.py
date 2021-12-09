@@ -503,9 +503,11 @@ class HoneyPotFilesystem:
         if not fd:
             return
         if self.tempfiles[fd] is not None:
-            shasum: str = hashlib.sha256(
-                open(self.tempfiles[fd], "rb").read()
-            ).hexdigest()
+            with open(self.tempfiles[fd], "rb") as f:
+                sha256 = hashlib.sha256()
+                for chunk in iter(lambda: f.read(4096), b""):
+                    sha256.update(chunk)
+            shasum = sha256.hexdigest()
             shasumfile: str = (
                 CowrieConfig.get("honeypot", "download_path") + "/" + shasum
             )
