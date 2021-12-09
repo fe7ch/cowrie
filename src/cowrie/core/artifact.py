@@ -72,11 +72,15 @@ class Artifact:
             return None
 
         self.fp.seek(0)
-        data = self.fp.read()
+
+        sha256 = hashlib.sha256()
+        for chunk in iter(lambda: self.fp.read(4096), b""):
+            sha256.update(chunk)
+
         self.fp.close()
         self.closed = True
 
-        self.shasum = hashlib.sha256(data).hexdigest()
+        self.shasum = sha256.hexdigest()
         self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
 
         if os.path.exists(self.shasumFilename):

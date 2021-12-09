@@ -503,17 +503,18 @@ class HoneyPotFilesystem:
         if not fd:
             return
         if self.tempfiles[fd] is not None:
-            shasum: str = hashlib.sha256(
-                open(self.tempfiles[fd], "rb").read()
-            ).hexdigest()
-            shasumfile: str = (
-                CowrieConfig.get("honeypot", "download_path") + "/" + shasum
-            )
+            sha256 = hashlib.sha256()
+            with open(self.tempfiles[fd], "rb") as f:
+                for chunk in iter(lambda: f.read(4096), b""):
+                    sha256.update(chunk)
+            shasum = sha256.hexdigest()
+            shasumfile: str = CowrieConfig.get("honeypot", "download_path") + "/" + shasum
             if os.path.exists(shasumfile):
                 os.remove(self.tempfiles[fd])
             else:
                 os.rename(self.tempfiles[fd], shasumfile)
             self.update_realfile(self.getfile(self.filenames[fd]), shasumfile)
+
             log.msg(
                 format='SFTP Uploaded file "%(filename)s" to %(outfile)s',
                 eventid="cowrie.session.file_upload",

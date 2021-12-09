@@ -146,14 +146,17 @@ class LoggingServerProtocol(insults.ServerProtocol):
         if self.stdinlogOpen:
             try:
                 with open(self.stdinlogFile, "rb") as f:
-                    shasum = hashlib.sha256(f.read()).hexdigest()
-                    shasumfile = os.path.join(self.downloadPath, shasum)
-                    if os.path.exists(shasumfile):
-                        os.remove(self.stdinlogFile)
-                        duplicate = True
-                    else:
-                        os.rename(self.stdinlogFile, shasumfile)
-                        duplicate = False
+                    sha256 = hashlib.sha256()
+                    for chunk in iter(lambda: f.read(4096), b""):
+                        sha256.update(chunk)
+                    shasum = sha256.hexdigest()
+                shasumfile = os.path.join(self.downloadPath, shasum)
+                if os.path.exists(shasumfile):
+                    os.remove(self.stdinlogFile)
+                    duplicate = True
+                else:
+                    os.rename(self.stdinlogFile, shasumfile)
+                    duplicate = False
 
                 log.msg(
                     eventid="cowrie.session.file_download",
@@ -187,14 +190,18 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         continue
 
                     with open(rf, "rb") as f:
-                        shasum = hashlib.sha256(f.read()).hexdigest()
-                        shasumfile = os.path.join(self.downloadPath, shasum)
-                        if os.path.exists(shasumfile):
-                            os.remove(rf)
-                            duplicate = True
-                        else:
-                            os.rename(rf, shasumfile)
-                            duplicate = False
+                        sha256 = hashlib.sha256()
+                        for chunk in iter(lambda: f.read(4096), b""):
+                            sha256.update(chunk)
+                        shasum = sha256.hexdigest()
+                    shasumfile = os.path.join(self.downloadPath, shasum)
+                    if os.path.exists(shasumfile):
+                        os.remove(rf)
+                        duplicate = True
+                    else:
+                        os.rename(rf, shasumfile)
+                        duplicate = False
+
                     log.msg(
                         eventid="cowrie.session.file_download",
                         format="Saved redir contents with SHA-256 %(shasum)s to %(outfile)s",
