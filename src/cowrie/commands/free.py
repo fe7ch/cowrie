@@ -94,7 +94,7 @@ class Command_free(HoneyPotCommand):
             "MemAvailable",
         ]
         mem_info_map: dict[str, int] = {}
-        with open("/proc/meminfo") as proc_file:
+        with self.fs.file_contents("/proc/meminfo") as proc_file:
             for line in proc_file:
                 tokens = line.split(":")
 
