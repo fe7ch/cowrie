@@ -35,6 +35,41 @@ class HoneyPotShell:
 
     def lineReceived(self, line: str) -> None:
         log.msg(eventid="cowrie.command.input", input=line, format="CMD: %(input)s")
+
+        line = line.replace(
+            "(python -V 2>/dev/null && echo python && python -V) || (/usr/local/bin/python -V 2>/dev/null && echo /usr/local/bin/python && /usr/local/bin/python -V)",
+            "(python -V && echo python && python -V")
+
+        line = line.replace(
+            "2>/dev/null sh -c 'cat /lib/libdl.so* || cat /lib/librt.so* || cat /bin/cat || cat /sbin/ifconfig'",
+            "cat /bin/cat")
+
+        # 1>/dev/null 2>/dev/null
+        line = re.sub(r"([012]>/dev/null)", r"", line)
+
+        # echo 1 || echo 0
+        line = re.sub(r"(echo [\d]+) \|\| echo [\d]+", r"\g<1>", line)
+
+        line = re.sub(r"(\|\| while read [a-z]+; do (/bin/busybox )?echo \$[a-z]+; done < [a-zA-Z0-9/.\-]+)", r"", line)
+
+        r = re.search(
+            r".*((/bin/busybox )?echo( -ne| -en)? ['\"][^'\"]+['\"]) \|\| (/bin/busybox )?echo( -ne| -en)? ['\"][^'\"]+['\"]$",
+            line)
+        if r and r.group(1):
+            line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
+
+        r = re.search(r".*((/bin/busybox )?dd [^|]+) \|\| (/bin/busybox )?cat .*$", line)
+        if r and r.group(1):
+            line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
+
+        r = re.search(r"((/bin/busybox )?cat [^|]+) \|\|[\s]+((/bin/busybox )?dd .*)$", line)
+        if r and r.group(1):
+            line = line[:line.find(r.group(1)) + len(r.group(1)) + 1]
+
+        r = re.search(r"\((/bin/busybox [a-zA-Z0-9]+)[\s]*\|\|[\s]*:\)$", line)
+        if r and r.group(1):
+            line = line.replace(r.group(0), r.group(1))
+
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True, posix=True)
         # Add these special characters that are not in the default lexer
         self.lexer.wordchars += "@%{}=$:+^,()`"
