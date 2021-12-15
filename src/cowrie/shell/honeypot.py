@@ -74,7 +74,6 @@ class HoneyPotShell:
         if r and r.group(0):
             line = line[:r.end(0)] + " " + line[r.end(0):]
 
-
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True, posix=True)
         # Add these special characters that are not in the default lexer
         self.lexer.wordchars += "@%{}=$:+^,()`"
