@@ -18,7 +18,6 @@ __all__ = [
     "dd",
     "du",
     "env",
-    "etc_init_d",
     "ethtool",
     "free",
     "fs",
