@@ -39,6 +39,7 @@ log_path = var/log/cowrie
 #
 # (default: downloads)
 download_path = ${honeypot:state_path}/downloads
+download_path_uniq = ${honeypot:state_path}/downloads_uniq
 
 
 # Directory for static data files
