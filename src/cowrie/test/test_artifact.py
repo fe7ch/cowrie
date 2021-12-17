@@ -8,9 +8,18 @@ from cowrie.core.artifact import Artifact
 Artifact.artifactDir = os.path.join(tempfile.gettempdir(), "cowrie-artifacts")
 
 
-class MyTest(unittest.TestCase):
-    def setUp(self) -> None:
+class TestArtifact(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
         os.mkdir(Artifact.artifactDir)
+
+    @classmethod
+    def tearDownClass(cls) -> None:
+        os.rmdir(Artifact.artifactDir)
+
+    def tearDown(self) -> None:
+        for name in os.listdir(Artifact.artifactDir):
+            os.unlink(os.path.join(Artifact.artifactDir, name))
 
     def test_hello_world(self) -> None:
         content = b"Hello world"
@@ -36,11 +45,6 @@ class MyTest(unittest.TestCase):
         path = os.path.join(Artifact.artifactDir, sha256)
         self.assertEqual(a.shasumFilename, path)
         self.assertTrue(os.path.exists(path))
-
-    def tearDown(self) -> None:
-        for name in os.listdir(Artifact.artifactDir):
-            os.unlink(os.path.join(Artifact.artifactDir, name))
-        os.rmdir(Artifact.artifactDir)
 
 
 if __name__ == "__main__":
