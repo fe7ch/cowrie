@@ -78,7 +78,7 @@ class Command_free(HoneyPotCommand):
                 self._print_stats(meminfo, fmt="bytes")
                 break
             if opt in ("-k", "--kilo"):
-                self._print_stats(meminfo, fmt="kilo")
+                self._print_stats(meminfo)
                 break
             if opt in ("-m", "--mega"):
                 self._print_stats(meminfo, fmt="mega")
