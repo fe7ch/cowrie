@@ -44,7 +44,7 @@ class Command_free(HoneyPotCommand):
     )
     MAGNITUDE = ("B", "M", "G", "T", "Z")
 
-    def call(self):
+    def call(self) -> None:
         try:
             opts, args = getopt.getopt(
                 self.args, "hbkmgVt", ["human", "bytes", "kilo", "mega", "giga", "tera", "help", "version", "total"])
