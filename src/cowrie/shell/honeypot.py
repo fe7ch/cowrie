@@ -70,10 +70,6 @@ class HoneyPotShell:
         if r and r.group(1):
             line = line.replace(r.group(0), r.group(1))
 
-        # if line.startswith("/etc/init.d/"):
-        #     sep = len("/etc/init.d/")
-        #     line = line[:sep] + " " + line[sep + 1:]
-
         if line.startswith("/etc/init.d/"):
             sep = len("/etc/init.d/")
             line = line[:sep] + " " + line[sep:]
