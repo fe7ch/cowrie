@@ -42,6 +42,7 @@ class Command_free(HoneyPotCommand):
         "-/+ buffers/cache\n"
         "Swap:   {SwapTotal:>10} {SwapUsed:>10} {SwapFree:>10}\n"
     )
+    MAGNITUDE = ("B", "M", "G", "T", "Z")
 
     def call(self):
         try:
@@ -106,14 +107,13 @@ class Command_free(HoneyPotCommand):
         self.write(Command_free.OUTPUT_FMT.format(**meminfo))
 
     def _print_stats_for_human(self, meminfo: Dict[str, int]) -> None:
-        magnitude = ["B", "M", "G", "T", "Z"]
         tmp = {}
         for key, value in meminfo.items():
             index = 0
-            while value >= 1024 and index < len(magnitude):
+            while value >= 1024 and index < len(self.MAGNITUDE):
                 value //= 1024
                 index += 1
-            tmp[key] = "{:g}{}".format(round(value, 1), magnitude[index])
+            tmp[key] = "{:g}{}".format(round(value, 1), self.MAGNITUDE[index])
         self.write(Command_free.OUTPUT_FMT.format(**tmp))
 
     def _read_meminfo(self) -> Dict[str, int]:
@@ -127,7 +127,7 @@ class Command_free(HoneyPotCommand):
         r["SwapUsed"] = r["SwapTotal"] - r["SwapFree"]
         return r
 
-    def _total(self, meminfo: Dict[str, int]) -> None:
+    def _print_total_stats(self, meminfo: Dict[str, int]) -> None:
         total_total = meminfo["MemTotal"] + meminfo["SwapTotal"]    # )
         total_used = meminfo["MemUsed"] + meminfo["SwapUsed"]
         total_free = meminfo["MemFree"] + meminfo["SwapFree"]
