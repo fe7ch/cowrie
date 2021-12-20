@@ -35,7 +35,7 @@ class Command_free(HoneyPotCommand):
         "For more details see free(1).\n"
     )
     VERSION = "free from procps-ng 3.3.9\n"
-    MEMINFO_KEYS = ["MemTotal", "MemFree", "Shmem", "Buffers", "Cached", "SwapTotal", "SwapFree"]
+    MEMINFO_KEYS = ("MemTotal", "MemFree", "Shmem", "Buffers", "Cached", "SwapTotal", "SwapFree")
     OUTPUT_FMT = (
         "             total       used       free     shared    buffers     cached\n"
         "Mem:    {MemTotal:>10} {MemUsed:>10} {MemFree:>10} {Shmem:>10} {Buffers:>10} {Cached:>10}\n"
