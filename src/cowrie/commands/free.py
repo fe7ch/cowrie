@@ -39,7 +39,7 @@ class Command_free(HoneyPotCommand):
     OUTPUT_FMT = (
         "             total       used       free     shared    buffers     cached\n"
         "Mem:    {MemTotal:>10} {MemUsed:>10} {MemFree:>10} {Shmem:>10} {Buffers:>10} {Cached:>10}\n"
-        "-/+ buffers/cache\n"
+        "-/+ buffers/cache  {Buffers:>10} {Cached:>10}\n"
         "Swap:   {SwapTotal:>10} {SwapUsed:>10} {SwapFree:>10}\n"
     )
     MAGNITUDE = ("B", "M", "G", "T", "Z")
