@@ -46,8 +46,8 @@ class Command_free(HoneyPotCommand):
 
     def call(self):
         try:
-            opts, args = getopt.getopt(self.args, "hbkmgVt",
-                                       ["human", "bytes", "kilo", "mega", "giga", "tera", "help", "version", "total"])
+            opts, args = getopt.getopt(
+                self.args, "hbkmgVt", ["human", "bytes", "kilo", "mega", "giga", "tera", "help", "version", "total"])
         except getopt.GetoptError as e:
             self.errorWrite("free: invalid option -- {}\n".format(e.opt))
             self._help()
