@@ -8,7 +8,7 @@ from typing import Dict
 from cowrie.shell.command import HoneyPotCommand
 
 
-class command_free(HoneyPotCommand):
+class Command_free(HoneyPotCommand):
     """/usr/bin/free"""
     HELP = (
         "\n"
@@ -103,7 +103,7 @@ class command_free(HoneyPotCommand):
         elif fmt == "tera":
             for key, value in meminfo.items():
                 meminfo[key] = ((value // 1024) // 1024) // 1024
-        self.write(command_free.OUTPUT_FMT.format(**meminfo))
+        self.write(Command_free.OUTPUT_FMT.format(**meminfo))
 
     def _print_stats_for_human(self, meminfo: Dict[str, int]) -> None:
         magnitude = ["B", "M", "G", "T", "Z"]
@@ -114,14 +114,14 @@ class command_free(HoneyPotCommand):
                 value //= 1024
                 index += 1
             tmp[key] = "{:g}{}".format(round(value, 1), magnitude[index])
-        self.write(command_free.OUTPUT_FMT.format(**tmp))
+        self.write(Command_free.OUTPUT_FMT.format(**tmp))
 
     def _read_meminfo(self) -> Dict[str, int]:
         r = {}
         data = self.fs.file_contents("/proc/meminfo")
         for line in data.decode().splitlines():
             key, value = line.split(":")
-            if key in command_free.MEMINFO_KEYS:
+            if key in Command_free.MEMINFO_KEYS:
                 r[key] = int(value[:value.rfind(" ")])
         r["MemUsed"] = r["MemTotal"] - r["MemFree"]
         r["SwapUsed"] = r["SwapTotal"] - r["SwapFree"]
@@ -131,17 +131,17 @@ class command_free(HoneyPotCommand):
         total_total = meminfo["MemTotal"] + meminfo["SwapTotal"]    # )
         total_used = meminfo["MemUsed"] + meminfo["SwapUsed"]
         total_free = meminfo["MemFree"] + meminfo["SwapFree"]
-        self.write(command_free.OUTPUT_FMT.format(**meminfo))
+        self.write(Command_free.OUTPUT_FMT.format(**meminfo))
         self.write("Total:  {:>10} {:>10} {:>10}\n".format(total_total, total_used, total_free))
 
     def _help(self) -> None:
-        self.write(command_free.HELP)
+        self.write(Command_free.HELP)
 
     def _version(self) -> None:
-        self.write(command_free.VERSION)
+        self.write(Command_free.VERSION)
 
 
 commands = {
-    "free": command_free,
-    "/usr/bin/free": command_free,
+    "free": Command_free,
+    "/usr/bin/free": Command_free,
 }
