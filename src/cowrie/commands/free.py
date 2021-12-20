@@ -1,6 +1,6 @@
 # Copyright (c) 2015 Michel Oosterhof <michel@oosterhof.net>
 # All rights reserved.
-from __future__ import absolute_import, division
+from __future__ import annotations
 
 import getopt
 from typing import Dict
