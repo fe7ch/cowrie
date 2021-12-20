@@ -110,8 +110,9 @@ class Command_free(HoneyPotCommand):
         tmp = {}
         for key, value in meminfo.items():
             index = 0
-            while value >= 1024 and index < len(self.MAGNITUDE):
-                value //= 1024
+            value = float(meminfo[key])
+            while value >= 1024.0 and index < len(self.MAGNITUDE):
+                value /= 1024.0
                 index += 1
             tmp[key] = "{:g}{}".format(round(value, 1), self.MAGNITUDE[index])
         self.write(Command_free.OUTPUT_FMT.format(**tmp))
