@@ -70,6 +70,10 @@ class HoneyPotShell:
         if r and r.group(1):
             line = line.replace(r.group(0), r.group(1))
 
+        if line.startswith("/etc/init.d/"):
+            sep = len("/etc/init.d/")
+            line = line[:sep] + " " + line[sep:]
+
         self.lexer = shlex.shlex(instream=line, punctuation_chars=True, posix=True)
         # Add these special characters that are not in the default lexer
         self.lexer.wordchars += "@%{}=$:+^,()`"

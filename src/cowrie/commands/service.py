@@ -118,4 +118,5 @@ class Command_service(HoneyPotCommand):
 
 
 commands["/usr/sbin/service"] = Command_service
+commands["/etc/init.d/"] = Command_service
 commands["service"] = Command_service
