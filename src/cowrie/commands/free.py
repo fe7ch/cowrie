@@ -9,7 +9,6 @@ from cowrie.shell.command import HoneyPotCommand
 
 
 class Command_free(HoneyPotCommand):
-    """/usr/bin/free"""
     HELP = (
         "\n"
         "Usage:\n"
@@ -42,6 +41,14 @@ class Command_free(HoneyPotCommand):
         "-/+ buffers/cache  {Buffers:>10} {Cached:>10}\n"
         "Swap:   {SwapTotal:>10} {SwapUsed:>10} {SwapFree:>10}\n"
     )
+    OUTPUT_TOTAL_FMT = (
+        "             total       used       free     shared    buffers     cached\n"
+        "Mem:    {MemTotal:>10} {MemUsed:>10} {MemFree:>10} {Shmem:>10} {Buffers:>10} {Cached:>10}\n"
+        "-/+ buffers/cache  {Buffers:>10} {Cached:>10}\n"
+        "Swap:   {SwapTotal:>10} {SwapUsed:>10} {SwapFree:>10}\n"
+        "Total:  {TotalTotal:>10} {TotalUsed:>10} {TotalFree:>10}\n"
+    )
+
     MAGNITUDE = ("B", "M", "G", "T", "Z")
 
     def call(self) -> None:
@@ -60,6 +67,9 @@ class Command_free(HoneyPotCommand):
             self._print_stats(meminfo)
             return
 
+        total = False
+        if "--total" in tmp or "-t" in tmp:
+            total = True
         if "--help" in tmp:
             self._help()
             return
@@ -67,34 +77,34 @@ class Command_free(HoneyPotCommand):
             self._version()
             return
         if "--human" in tmp or "-h" in tmp:
-            self._print_stats_for_human(meminfo)
-            return
-        if "--total" in tmp or "-t" in tmp:
-            self._total(meminfo)
+            self._print_stats_for_human(meminfo, total=total)
             return
 
         for opt, arg in opts:
             if opt in ("-b", "--bytes"):
-                self._print_stats(meminfo, fmt="bytes")
-                break
-            if opt in ("-k", "--kilo"):
-                self._print_stats(meminfo)
+                self._print_stats(meminfo, fmt="bytes", total=total)
                 break
             if opt in ("-m", "--mega"):
-                self._print_stats(meminfo, fmt="mega")
+                self._print_stats(meminfo, fmt="mega", total=total)
                 break
             if opt in ("-g", "--giga"):
-                self._print_stats(meminfo, fmt="giga")
+                self._print_stats(meminfo, fmt="giga", total=total)
                 break
+            if opt in ("-k", "--kilo"):
+                self._print_stats(meminfo, total=total)
             if opt == "--tera":
-                self._print_stats(meminfo, fmt="tera")
+                self._print_stats(meminfo, fmt="tera", total=total)
                 break
+            self._print_stats(meminfo, total=total)
+            break
 
-    def _print_stats(self, meminfo: Dict[str, int], fmt: str = "kilo") -> None:
+    def _print_stats(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
         if fmt == "bytes":
             for key, value in meminfo.items():
                 meminfo[key] = value * 1024
-        # elif fmt == "kilo":  # by default
+        elif fmt == "kilo":
+            for key, value in meminfo.items():
+                meminfo[key] = value
         elif fmt == "mega":
             for key, value in meminfo.items():
                 meminfo[key] = value // 1024
@@ -104,18 +114,36 @@ class Command_free(HoneyPotCommand):
         elif fmt == "tera":
             for key, value in meminfo.items():
                 meminfo[key] = ((value // 1024) // 1024) // 1024
-        self.write(Command_free.OUTPUT_FMT.format(**meminfo))
+        if not total:
+            self.write(Command_free.OUTPUT_FMT.format(**meminfo))
+        else:
+            totalinfo = {
+                "TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"],
+                "TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"],
+                "TotalFree": meminfo["MemFree"] + meminfo["SwapFree"], }
+            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**meminfo, **totalinfo))
 
-    def _print_stats_for_human(self, meminfo: Dict[str, int]) -> None:
+    def _print_stats_for_human(self, meminfo: Dict[str, int], total: bool = False) -> None:
         tmp = {}
-        for key, value in meminfo.items():
+        totalinfo = {}
+        if total:
+            totalinfo = {
+                "TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"],
+                "TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"],
+                "TotalFree": meminfo["MemFree"] + meminfo["SwapFree"],
+            }
+        union = {**meminfo, **totalinfo}
+        for key in union:
             index = 0
-            value = float(meminfo[key])
-            while value >= 1024.0 and index < len(self.MAGNITUDE):
-                value /= 1024.0
+            value = float(union[key])
+            while value >= 1024 and index < len(Command_free.MAGNITUDE):
+                value /= 1024
                 index += 1
-            tmp[key] = "{:g}{}".format(round(value, 1), self.MAGNITUDE[index])
-        self.write(Command_free.OUTPUT_FMT.format(**tmp))
+            tmp[key] = "{:g}{}".format(round(union[key], 1), Command_free.MAGNITUDE[index])
+        if total:
+            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**tmp))
+        else:
+            self.write(Command_free.OUTPUT_FMT.format(**tmp))
 
     def _read_meminfo(self) -> Dict[str, int]:
         r = {}
@@ -127,13 +155,6 @@ class Command_free(HoneyPotCommand):
         r["MemUsed"] = r["MemTotal"] - r["MemFree"]
         r["SwapUsed"] = r["SwapTotal"] - r["SwapFree"]
         return r
-
-    def _print_total_stats(self, meminfo: Dict[str, int]) -> None:
-        total_total = meminfo["MemTotal"] + meminfo["SwapTotal"]    # )
-        total_used = meminfo["MemUsed"] + meminfo["SwapUsed"]
-        total_free = meminfo["MemFree"] + meminfo["SwapFree"]
-        self.write(Command_free.OUTPUT_FMT.format(**meminfo))
-        self.write("Total:  {:>10} {:>10} {:>10}\n".format(total_total, total_used, total_free))
 
     def _help(self) -> None:
         self.write(Command_free.HELP)
