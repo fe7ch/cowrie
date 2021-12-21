@@ -5,7 +5,7 @@ from __future__ import annotations
 import configparser
 import hashlib
 import os
-from typing import BinaryIO
+from typing import BinaryIO, IO
 
 from twisted.application import internet
 from twisted.internet import endpoints
@@ -135,12 +135,12 @@ def sha256_of_file(path: str, block_size: int = 4096) -> str:
         return sha256_of_file_object(f, block_size)
 
 
-def sha256_of_file_object(f: BinaryIO, block_size: int = 4096) -> str:
+def sha256_of_file_object(f: IO, block_size: int = 4096) -> str:
     """Calculate sha256 of an already opened file."""
     if f.closed or not ("r" in f.mode and "b" in f.mode):
         return ""
     f.seek(0, 0)
     h = hashlib.sha256()
-    for block in iter(lambda: f.read(block_size), b""):
+    for block in iter(lambda: f.read(block_size), b""):  # type: ignore # TODO: mypy error
         h.update(block)
     return h.hexdigest()
