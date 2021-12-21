@@ -1,39 +1,36 @@
 # Copyright (c) 2016 Michel Oosterhof <michel@oosterhof.net>
-
-"""
-This module contains code to handling saving of honeypot artifacts
-These will typically be files uploaded to the honeypot and files
-downloaded inside the honeypot, or input being piped in.
-
-Code behaves like a normal Python file handle.
-
-Example:
-
-    with Artifact(name) as f:
-        f.write("abc")
-
-or:
-
-    g = Artifact("testme2")
-    g.write("def")
-    g.close()
-
-"""
-
 from __future__ import annotations
 
 import hashlib
 import os
 import tempfile
-from types import TracebackType
-from typing import Any, Optional
+from typing import IO, Optional, Type, TYPE_CHECKING
 
 from twisted.python import log
 
 from cowrie.core.config import CowrieConfig
 
+if TYPE_CHECKING:
+    from types import TracebackType
+
 
 class Artifact:
+    """This class contains code to handling saving of honeypot artifacts.
+
+    These will typically be files uploaded to the honeypot and files downloaded inside the honeypot,
+    or input being piped in.
+
+    Code behaves like a normal Python file handle.
+
+    Example:
+        with Artifact(name) as f:
+            f.write("abc")
+
+    or:
+        g = Artifact("testme2")
+        g.write("def")
+        g.close()
+    """
 
     artifactDir: str = CowrieConfig.get("honeypot", "download_path")
 
@@ -42,45 +39,50 @@ class Artifact:
 
         self.fp = tempfile.NamedTemporaryFile(dir=self.artifactDir, delete=False)
         self.tempFilename = self.fp.name
-        self.closed: bool = False
 
         self.shasum: str = ""
         self.shasumFilename: str = ""
 
-    def __enter__(self) -> Any:
+    def __enter__(self) -> IO:
         return self.fp
 
     def __exit__(
-        self,
-        etype: Optional[type[BaseException]],
-        einst: Optional[BaseException],
-        etrace: Optional[TracebackType],
+            self,
+            etype: Optional[Type[BaseException]],
+            einst: Optional[BaseException],
+            etrace: Optional[TracebackType],
     ) -> bool:
         self.close()
         return True
 
-    def write(self, bytes: bytes) -> None:
-        self.fp.write(bytes)
+    def write(self, data: bytes) -> int:
+        return self.fp.write(data)
 
-    def fileno(self) -> Any:
+    def fileno(self) -> int:
         return self.fp.fileno()
 
-    def close(self, keepEmpty: bool = False) -> Optional[tuple[str, str]]:
-        size: int = self.fp.tell()
-        if size == 0 and not keepEmpty:
+    @property
+    def closed(self) -> bool:
+        return self.fp.closed
+
+    def close(self, keep_empty: bool = False) -> Optional[tuple[str, str]]:
+        if not keep_empty and self.fp.tell() == 0:
             os.remove(self.fp.name)
             return None
 
-        self.fp.seek(0)
-        data = self.fp.read()
-        self.fp.close()
-        self.closed = True
+        self.fp.seek(0, 0)
 
-        self.shasum = hashlib.sha256(data).hexdigest()
+        sha256 = hashlib.sha256()
+        for block in iter(lambda: self.fp.read(4096), b""):
+            sha256.update(block)
+
+        self.fp.close()
+
+        self.shasum = sha256.hexdigest()
         self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
 
         if os.path.exists(self.shasumFilename):
-            log.msg("Not storing duplicate content " + self.shasum)
+            log.msg(f"Not storing duplicate content {self.shasum}")
             os.remove(self.fp.name)
         else:
             os.rename(self.fp.name, self.shasumFilename)

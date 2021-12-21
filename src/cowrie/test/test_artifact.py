@@ -39,7 +39,7 @@ class TestArtifact(unittest.TestCase):
         sha256 = hashlib.sha256(content).hexdigest()
 
         a = Artifact("some_empty_artifact")
-        a.close(keepEmpty=True)
+        a.close(keep_empty=True)
 
         self.assertEqual(a.shasum, sha256)
         path = os.path.join(Artifact.artifactDir, sha256)
