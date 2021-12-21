@@ -1,7 +1,6 @@
 # Copyright (c) 2016 Michel Oosterhof <michel@oosterhof.net>
 from __future__ import annotations
 
-import hashlib
 import os
 import tempfile
 from typing import IO, Optional, Type, TYPE_CHECKING
@@ -9,6 +8,7 @@ from typing import IO, Optional, Type, TYPE_CHECKING
 from twisted.python import log
 
 from cowrie.core.config import CowrieConfig
+from cowrie.core import utils
 
 if TYPE_CHECKING:
     from types import TracebackType
@@ -72,13 +72,11 @@ class Artifact:
 
         self.fp.seek(0, 0)
 
-        sha256 = hashlib.sha256()
-        for block in iter(lambda: self.fp.read(4096), b""):
-            sha256.update(block)
+        shasum = utils.sha256_of_file_object(self.fp)
 
         self.fp.close()
 
-        self.shasum = sha256.hexdigest()
+        self.shasum = shasum
         self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
 
         if os.path.exists(self.shasumFilename):

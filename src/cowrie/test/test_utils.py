@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import configparser
+import os
+import tempfile
 import unittest
+import hashlib
 from io import StringIO
 
-from cowrie.core.utils import create_endpoint_services, durationHuman, get_endpoints_from_section
+from cowrie.core.utils import (
+    create_endpoint_services, durationHuman, get_endpoints_from_section, sha256_of_file, sha256_of_file_object)
 
 from twisted.application.service import MultiService
 from twisted.internet import protocol
@@ -83,3 +87,18 @@ class UtilsTestCase(unittest.TestCase):
             reactor, parent, ["tcp:23:interface=1.1.1.1", "tcp:2323:interface=2.2.2.2"], protocol.Factory()
         )
         self.assertEqual(len(parent.services), 2)
+
+    def test_sha256_of_path(self) -> None:
+        content = b"Hello world"
+        with tempfile.NamedTemporaryFile(prefix="test-", delete=False) as f:
+            f.write(content)
+        self.assertEqual(hashlib.sha256(content).hexdigest(), sha256_of_file(f.name))
+        os.unlink(f.name)
+
+    def test_sha256_of_file_object(self) -> None:
+        content = b"Hello world"
+        with tempfile.NamedTemporaryFile(prefix="test-", delete=False) as f:
+            f.write(content)
+        with open(f.name, "rb") as f:
+            self.assertEqual(hashlib.sha256(content).hexdigest(), sha256_of_file_object(f))
+        os.unlink(f.name)

@@ -1,10 +1,10 @@
-# -*- test-case-name: cowrie.test.utils -*-
 # Copyright (c) 2010-2014 Upi Tamminen <desaster@gmail.com>
 # See the COPYRIGHT file for more information
-
 from __future__ import annotations
 
 import configparser
+import hashlib
+import os
 from typing import BinaryIO
 
 from twisted.application import internet
@@ -12,9 +12,7 @@ from twisted.internet import endpoints
 
 
 def durationHuman(duration: float) -> str:
-    """
-    Turn number of seconds into human readable string
-    """
+    """Turn number of seconds into human readable string."""
     seconds: int = int(round(duration))
     minutes: int
     minutes, seconds = divmod(seconds, 60)
@@ -47,9 +45,7 @@ def durationHuman(duration: float) -> str:
 
 
 def tail(the_file: BinaryIO, lines_2find: int = 20) -> list[bytes]:
-    """
-    From http://stackoverflow.com/questions/136168/get-last-n-lines-of-a-file-with-python-similar-to-tail
-    """
+    """From http://stackoverflow.com/questions/136168/get-last-n-lines-of-a-file-with-python-similar-to-tail."""
     lines_found: int = 0
     total_bytes_scanned: int = 0
 
@@ -68,8 +64,8 @@ def tail(the_file: BinaryIO, lines_2find: int = 20) -> list[bytes]:
 
 
 def uptime(total_seconds: float) -> str:
-    """
-    Gives a human-readable uptime string
+    """Gives a human-readable uptime string.
+
     Thanks to http://thesmithfam.org/blog/2005/11/19/python-uptime-script/
     (modified to look like the real uptime command)
     """
@@ -98,9 +94,7 @@ def uptime(total_seconds: float) -> str:
     return s
 
 
-def get_endpoints_from_section(
-    cfg: configparser.ConfigParser, section: str, default_port: int
-) -> list[str]:
+def get_endpoints_from_section(cfg: configparser.ConfigParser, section: str, default_port: int) -> list[str]:
     listen_addr: str
     listen_port: int
     listen_endpoints: list[str] = []
@@ -131,3 +125,22 @@ def create_endpoint_services(reactor, parent, listen_endpoints, factory):
         service = internet.StreamServerEndpointService(endpoint, factory)
         # FIXME: Use addService on parent ?
         service.setServiceParent(parent)
+
+
+def sha256_of_file(path: str, block_size: int = 4096) -> str:
+    """Calculate sha256 of a file."""
+    if not os.path.exists(path):
+        return ""
+    with open(path, "rb") as f:
+        return sha256_of_file_object(f, block_size)
+
+
+def sha256_of_file_object(f: BinaryIO, block_size: int = 4096) -> str:
+    """Calculate sha256 of an already opened file."""
+    if f.closed or not ("r" in f.mode and "b" in f.mode):
+        return ""
+    f.seek(0, 0)
+    h = hashlib.sha256()
+    for block in iter(lambda: f.read(block_size), b""):
+        h.update(block)
+    return h.hexdigest()
