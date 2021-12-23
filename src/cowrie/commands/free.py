@@ -60,7 +60,7 @@ class Command_free(HoneyPotCommand):
 
         tmp = [oa[0] for oa in opts]
         if not tmp:
-            self._print_stats(meminfo)
+            self._magniture_format(meminfo)
             return
 
         total = False
@@ -73,28 +73,28 @@ class Command_free(HoneyPotCommand):
             self._version()
             return
         if "--human" in tmp or "-h" in tmp:
-            self._print_stats_for_human(meminfo, total=total)
+            self._human_format(meminfo, total=total)
             return
 
         for opt, arg in opts:
             if opt in ("-b", "--bytes"):
-                self._print_stats(meminfo, fmt="bytes", total=total)
+                self._magniture_format(meminfo, fmt="bytes", total=total)
                 break
             if opt in ("-m", "--mega"):
-                self._print_stats(meminfo, fmt="mega", total=total)
+                self._magniture_format(meminfo, fmt="mega", total=total)
                 break
             if opt in ("-g", "--giga"):
-                self._print_stats(meminfo, fmt="giga", total=total)
+                self._magniture_format(meminfo, fmt="giga", total=total)
                 break
             if opt in ("-k", "--kilo"):
-                self._print_stats(meminfo, total=total)
+                self._magniture_format(meminfo, total=total)
             if opt == "--tera":
-                self._print_stats(meminfo, fmt="tera", total=total)
+                self._magniture_format(meminfo, fmt="tera", total=total)
                 break
-            self._print_stats(meminfo, total=total)
+            self._magniture_format(meminfo, total=total)
             break
 
-    def _print_stats(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
+    def _magniture_format(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
         if fmt == "bytes":
             for key, value in meminfo.items():
                 meminfo[key] = value * 1024
@@ -110,16 +110,13 @@ class Command_free(HoneyPotCommand):
         elif fmt == "tera":
             for key, value in meminfo.items():
                 meminfo[key] = ((value // 1024) // 1024) // 1024
-        self.write(Command_free.OUTPUT_FMT.format(**meminfo))
         if total:
-            totalinfo = {
-                "TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"],
-                "TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"],
-                "TotalFree": meminfo["MemFree"] + meminfo["SwapFree"], }
-            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**totalinfo))
+            meminfo.update({"TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"]})
+            meminfo.update({"TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"]})
+            meminfo.update({"TotalFree": meminfo["MemFree"] + meminfo["SwapFree"]})
+        self._print_output(meminfo, total)
 
-
-    def _print_stats_for_human(self, meminfo: Dict[str, int], total: bool = False) -> None:
+    def _human_format(self, meminfo: Dict[str, int], total: bool = False) -> None:
         tmp = {}
         totalinfo = {}
         if total:
@@ -128,6 +125,7 @@ class Command_free(HoneyPotCommand):
                 "TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"],
                 "TotalFree": meminfo["MemFree"] + meminfo["SwapFree"],
             }
+
         union = {**meminfo, **totalinfo}
         for key in union:
             index = 0
@@ -136,10 +134,7 @@ class Command_free(HoneyPotCommand):
                 value /= 1024
                 index += 1
             tmp[key] = "{:g}{}".format(round(value, 1), Command_free.MAGNITUDE[index])
-        self.write(Command_free.OUTPUT_FMT.format(**tmp))
-        if total:
-            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**tmp))
-
+        self._print_output(tmp, total)
 
     def _read_meminfo(self) -> Dict[str, int]:
         r = {}
@@ -151,6 +146,11 @@ class Command_free(HoneyPotCommand):
         r["MemUsed"] = r["MemTotal"] - r["MemFree"]
         r["SwapUsed"] = r["SwapTotal"] - r["SwapFree"]
         return r
+
+    def _print_output(self, dict, total=False):
+        self.write(Command_free.OUTPUT_FMT.format(**dict))
+        if total:
+            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**dict))
 
     def _help(self) -> None:
         self.write(Command_free.HELP)
