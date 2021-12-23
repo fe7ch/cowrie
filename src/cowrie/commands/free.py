@@ -114,14 +114,14 @@ class Command_free(HoneyPotCommand):
         elif fmt == "tera":
             for key, value in meminfo.items():
                 meminfo[key] = ((value // 1024) // 1024) // 1024
-        if not total:
-            self.write(Command_free.OUTPUT_FMT.format(**meminfo))
-        else:
+        if total:
             totalinfo = {
                 "TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"],
                 "TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"],
                 "TotalFree": meminfo["MemFree"] + meminfo["SwapFree"], }
             self.write(Command_free.OUTPUT_TOTAL_FMT.format(**meminfo, **totalinfo))
+        else:
+            self.write(Command_free.OUTPUT_FMT.format(**meminfo))
 
     def _print_stats_for_human(self, meminfo: Dict[str, int], total: bool = False) -> None:
         tmp = {}
