@@ -42,10 +42,6 @@ class Command_free(HoneyPotCommand):
         "Swap:   {SwapTotal:>10} {SwapUsed:>10} {SwapFree:>10}\n"
     )
     OUTPUT_TOTAL_FMT = (
-        "             total       used       free     shared    buffers     cached\n"
-        "Mem:    {MemTotal:>10} {MemUsed:>10} {MemFree:>10} {Shmem:>10} {Buffers:>10} {Cached:>10}\n"
-        "-/+ buffers/cache  {Buffers:>10} {Cached:>10}\n"
-        "Swap:   {SwapTotal:>10} {SwapUsed:>10} {SwapFree:>10}\n"
         "Total:  {TotalTotal:>10} {TotalUsed:>10} {TotalFree:>10}\n"
     )
 
@@ -114,14 +110,14 @@ class Command_free(HoneyPotCommand):
         elif fmt == "tera":
             for key, value in meminfo.items():
                 meminfo[key] = ((value // 1024) // 1024) // 1024
+        self.write(Command_free.OUTPUT_FMT.format(**meminfo))
         if total:
             totalinfo = {
                 "TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"],
                 "TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"],
                 "TotalFree": meminfo["MemFree"] + meminfo["SwapFree"], }
-            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**meminfo, **totalinfo))
-        else:
-            self.write(Command_free.OUTPUT_FMT.format(**meminfo))
+            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**totalinfo))
+
 
     def _print_stats_for_human(self, meminfo: Dict[str, int], total: bool = False) -> None:
         tmp = {}
@@ -139,11 +135,11 @@ class Command_free(HoneyPotCommand):
             while value >= 1024 and index < len(Command_free.MAGNITUDE):
                 value /= 1024
                 index += 1
-            tmp[key] = "{:g}{}".format(round(union[key], 1), Command_free.MAGNITUDE[index])
+            tmp[key] = "{:g}{}".format(round(value, 1), Command_free.MAGNITUDE[index])
+        self.write(Command_free.OUTPUT_FMT.format(**tmp))
         if total:
             self.write(Command_free.OUTPUT_TOTAL_FMT.format(**tmp))
-        else:
-            self.write(Command_free.OUTPUT_FMT.format(**tmp))
+
 
     def _read_meminfo(self) -> Dict[str, int]:
         r = {}
