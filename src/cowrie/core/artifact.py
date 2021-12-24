@@ -3,11 +3,15 @@ from __future__ import annotations
 
 import os
 import tempfile
+from typing import Type, TYPE_CHECKING
 
 from twisted.python import log
 
 from cowrie.core import utils
 from cowrie.core.config import CowrieConfig
+
+if TYPE_CHECKING:
+    from traceback import TracebackException
 
 
 class Artifact:
@@ -33,6 +37,13 @@ class Artifact:
         self._keep_empty = keep_empty
         self._sha256 = ""
         self._path = ""
+        self._duplicate = False
+
+    def __enter__(self) -> Artifact:
+        return self
+
+    def __exit__(self, exc_type: Type[BaseException], exc_val: BaseException, exc_tb: TracebackException) -> None:
+        self.close()
 
     @property
     def sha256(self) -> str:
@@ -41,6 +52,10 @@ class Artifact:
     @property
     def path(self) -> str:
         return self._path
+
+    @property
+    def duplicate(self) -> bool:
+        return self._duplicate
 
     def write(self, data: bytes) -> int:
         return self._f.write(data)
@@ -57,9 +72,8 @@ class Artifact:
 
         self._f.close()
 
-        try:
-            self._path = utils.store_file_by_sha256(self._f.name, self._sha256)
-        except FileExistsError:
+        self._path, self._duplicate = utils.store_file_by_sha256(self._f.name, self._sha256)
+        if self._duplicate:
             log.msg(f"Known artifact; sha256 = {self._sha256}")
             os.remove(self._f.name)
         else:

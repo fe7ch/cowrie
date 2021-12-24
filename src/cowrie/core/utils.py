@@ -7,7 +7,7 @@ import hashlib
 import os
 import re
 import shutil
-from typing import BinaryIO, IO
+from typing import BinaryIO, IO, Tuple
 
 from twisted.application import internet
 from twisted.internet import endpoints
@@ -156,14 +156,14 @@ def sha256_of_file_object(f: IO, block_size: int = 4096) -> str:
     return h.hexdigest()
 
 
-def store_file_by_sha256(temp_path: str, sha256: str) -> str:  # TODO: race condition
+def store_file_by_sha256(temp_path: str, sha256: str) -> Tuple[str, bool]:  # TODO: race condition
     """Move a file in the sha256-based file storage."""
     if not sha256_re.match(sha256):
         raise ValueError(f"sha256 = {sha256:s}")
 
     path = os.path.join(file_storage_path, sha256[:2], sha256[2:4], sha256)
     if os.path.exists(path):
-        raise FileExistsError(f"path = '{path:s}'")
+        return path, True
 
     a = os.path.dirname(path)
     if not os.path.exists(a):
@@ -180,4 +180,4 @@ def store_file_by_sha256(temp_path: str, sha256: str) -> str:  # TODO: race cond
     except OSError:
         raise
 
-    return path
+    return path, False

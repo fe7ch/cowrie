@@ -29,13 +29,12 @@
 from __future__ import annotations
 
 import getopt
-import hashlib
 import os
 import re
-import time
 
 from twisted.python import log
 
+from cowrie.core.artifact import Artifact
 from cowrie.core.config import CowrieConfig
 from cowrie.shell import fs
 from cowrie.shell.command import HoneyPotCommand
@@ -49,18 +48,12 @@ class Command_scp(HoneyPotCommand):
     """
 
     download_path = CowrieConfig.get("honeypot", "download_path")
-    download_path_uniq = CowrieConfig.get(
-        "honeypot", "download_path_uniq", fallback=download_path
-    )
-
     out_dir: str = ""
 
     def help(self):
-        self.write(
-            """usage: scp [-12346BCpqrv] [-c cipher] [-F ssh_config] [-i identity_file]
-           [-l limit] [-o ssh_option] [-P port] [-S program]
-           [[user@]host1:]file1 ... [[user@]host2:]file2\n"""
-        )
+        self.write("usage: scp [-12346BCpqrv] [-c cipher] [-F ssh_config] [-i identity_file]\n"
+                   "           [-l limit] [-o ssh_option] [-P port] [-S program]\n"
+                   "           [[user@]host1:]file1 ... [[user@]host2:]file2\n")
 
     def start(self):
         try:
@@ -104,51 +97,22 @@ class Command_scp(HoneyPotCommand):
         )
         self.protocol.terminal.write("\x00")
 
-    def drop_tmp_file(self, data, name):
-        tmp_fname = "{}-{}-{}-scp_{}".format(
-            time.strftime("%Y%m%d-%H%M%S"),
-            self.protocol.getProtoTransport().transportId,
-            self.protocol.terminal.transport.session.id,
-            re.sub("[^A-Za-z0-9]", "_", name),
-        )
+    def save_file(self, fake_path: str, data: bytes) -> None:
+        with Artifact() as a:
+            a.write(data)
 
-        self.safeoutfile = os.path.join(self.download_path, tmp_fname)
-
-        with open(self.safeoutfile, "wb+") as f:
-            f.write(data)
-
-    def save_file(self, data, fname):
-        self.drop_tmp_file(data, fname)
-
-        if os.path.exists(self.safeoutfile):
-            with open(self.safeoutfile, "rb"):
-                shasum = hashlib.sha256(data).hexdigest()
-                hash_path = os.path.join(self.download_path_uniq, shasum)
-
-            # If we have content already, delete temp file
-            if not os.path.exists(hash_path):
-                os.rename(self.safeoutfile, hash_path)
-                duplicate = False
-            else:
-                os.remove(self.safeoutfile)
-                duplicate = True
-
-            log.msg(
-                format='SCP Uploaded file "%(filename)s" to %(outfile)s',
+        log.msg(format='SCP Uploaded file "%(filename)s" to %(outfile)s',
                 eventid="cowrie.session.file_upload",
-                filename=os.path.basename(fname),
-                duplicate=duplicate,
-                url=fname,
-                outfile=shasum,
-                shasum=shasum,
-                destfile=fname,
-            )
+                filename=os.path.basename(fake_path),
+                duplicate=a.duplicate,
+                url=fake_path,
+                outfile=a.path,
+                shasum=a.sha256,
+                destfile=fake_path)
 
-            self.safeoutfile = None
-
-            # Update the honeyfs to point to downloaded file
-            self.fs.update_realfile(self.fs.getfile(fname), hash_path)
-            self.fs.chown(fname, self.protocol.user.uid, self.protocol.user.gid)
+        # Update the honeyfs to point to downloaded file.
+        self.fs.update_realfile(self.fs.getfile(fake_path), a.path)
+        self.fs.chown(fake_path, self.protocol.user.uid, self.protocol.user.gid)
 
     def parse_scp_data(self, data):
         # scp data format:
@@ -187,10 +151,9 @@ class Command_scp(HoneyPotCommand):
                     except fs.FileNotFound:
                         # The outfile locates at a non-existing directory.
                         self.errorWrite(f"-scp: {outfile}: No such file or directory\n")
-                        self.safeoutfile = None
                         return ""
 
-                    self.save_file(d, outfile)
+                    self.save_file(outfile, d)
 
                     data = data[dend + 1 :]  # cut saved data + \x00
             else:
