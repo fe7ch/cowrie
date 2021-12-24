@@ -101,18 +101,19 @@ class Command_scp(HoneyPotCommand):
         with Artifact() as a:
             a.write(data)
 
-        log.msg(format='SCP Uploaded file "%(filename)s" to %(outfile)s',
-                eventid="cowrie.session.file_upload",
-                filename=os.path.basename(fake_path),
-                duplicate=a.duplicate,
-                url=fake_path,
-                outfile=a.path,
-                shasum=a.sha256,
-                destfile=fake_path)
+        if a.path and os.path.exists(a.path):  # TODO: refactor this...
+            log.msg(format="SCP Uploaded file \"%(filename)s\" to %(outfile)s",
+                    eventid="cowrie.session.file_upload",
+                    filename=os.path.basename(fake_path),
+                    duplicate=a.duplicate,
+                    url=fake_path,
+                    outfile=a.path,
+                    shasum=a.sha256,
+                    destfile=fake_path)
 
-        # Update the honeyfs to point to downloaded file.
-        self.fs.update_realfile(self.fs.getfile(fake_path), a.path)
-        self.fs.chown(fake_path, self.protocol.user.uid, self.protocol.user.gid)
+            # Update the honeyfs to point to downloaded file.
+            self.fs.update_realfile(self.fs.getfile(fake_path), a.path)
+            self.fs.chown(fake_path, self.protocol.user.uid, self.protocol.user.gid)
 
     def parse_scp_data(self, data):
         # scp data format:

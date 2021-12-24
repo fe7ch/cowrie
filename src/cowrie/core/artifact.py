@@ -34,10 +34,10 @@ class Artifact:
 
     def __init__(self, keep_empty: bool = False) -> None:
         self._f = tempfile.NamedTemporaryFile(dir=self.download_path, delete=False)
-        self._keep_empty = keep_empty
         self._sha256 = ""
         self._path = ""
         self._duplicate = False
+        self._keep_empty = keep_empty
 
     def __enter__(self) -> Artifact:
         return self
@@ -77,4 +77,4 @@ class Artifact:
             log.msg(f"Known artifact; sha256 = {self._sha256}")
             os.remove(self._f.name)
         else:
-            log.msg(f"New artifact was be saved; sha256 = {self._sha256}, path = {self._path:s}")
+            log.msg(f"New artifact was saved; sha256 = {self._sha256}, path = {self._path:s}")
