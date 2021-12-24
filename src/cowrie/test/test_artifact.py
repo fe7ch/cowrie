@@ -8,7 +8,7 @@ from cowrie.core.artifact import Artifact
 Artifact.artifactDir = os.path.join(tempfile.gettempdir(), "cowrie-artifacts")
 
 
-class TestArtifact(unittest.TestCase):
+class TestArtifact(unittest.TestCase):  # TODO: file_storage_path
     @classmethod
     def setUpClass(cls) -> None:
         os.mkdir(Artifact.artifactDir)
@@ -23,28 +23,30 @@ class TestArtifact(unittest.TestCase):
 
     def test_hello_world(self) -> None:
         content = b"Hello world"
-        sha256 = hashlib.sha256(content).hexdigest()
 
         a = Artifact("some_artifact")
         a.write(content)
-        a.close()
+        r = a.close()
+        self.assertIsNotNone(r)
+        sha256, path = r  # type: ignore # TODO: refactor Artifact
 
-        self.assertEqual(a.shasum, sha256)
-        path = os.path.join(Artifact.artifactDir, sha256)
-        self.assertEqual(a.shasumFilename, path)
+        self.assertEqual(hashlib.sha256(content).hexdigest(), sha256)
         self.assertTrue(os.path.exists(path))
+
+        os.unlink(path)
 
     def test_keep_empty(self) -> None:
         content = b""
-        sha256 = hashlib.sha256(content).hexdigest()
 
         a = Artifact("some_empty_artifact")
-        a.close(keep_empty=True)
+        r = a.close(keep_empty=True)
+        self.assertIsNotNone(r)
+        sha256, path = r  # type: ignore # TODO: refactor Artifact
 
-        self.assertEqual(a.shasum, sha256)
-        path = os.path.join(Artifact.artifactDir, sha256)
-        self.assertEqual(a.shasumFilename, path)
+        self.assertEqual(a.shasum, hashlib.sha256(content).hexdigest())
         self.assertTrue(os.path.exists(path))
+
+        os.unlink(path)
 
 
 if __name__ == "__main__":

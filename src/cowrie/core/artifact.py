@@ -77,15 +77,14 @@ class Artifact:
         self.fp.close()
 
         self.shasum = shasum
-        self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
 
-        if os.path.exists(self.shasumFilename):
+        try:
+            path = utils.store_file_by_sha256(self.fp.name, shasum)
+        except FileExistsError:
             log.msg(f"Not storing duplicate content {self.shasum}")
             os.remove(self.fp.name)
+            self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
         else:
-            os.rename(self.fp.name, self.shasumFilename)
-            umask = os.umask(0)
-            os.umask(umask)
-            os.chmod(self.shasumFilename, 0o666 & ~umask)
+            self.shasumFilename = path
 
         return self.shasum, self.shasumFilename
