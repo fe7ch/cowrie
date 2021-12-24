@@ -3,15 +3,11 @@ from __future__ import annotations
 
 import os
 import tempfile
-from typing import IO, Optional, Type, TYPE_CHECKING
 
 from twisted.python import log
 
-from cowrie.core.config import CowrieConfig
 from cowrie.core import utils
-
-if TYPE_CHECKING:
-    from types import TracebackType
+from cowrie.core.config import CowrieConfig
 
 
 class Artifact:
@@ -20,71 +16,51 @@ class Artifact:
     These will typically be files uploaded to the honeypot and files downloaded inside the honeypot,
     or input being piped in.
 
-    Code behaves like a normal Python file handle.
-
     Example:
-        with Artifact(name) as f:
-            f.write("abc")
+        a = Artifact(keep_empty=True)
+        a.write("Hello world")
+        a.close()
 
-    or:
-        g = Artifact("testme2")
-        g.write("def")
-        g.close()
+        print(a.sha256)
+        if a.path:
+            print(a.path)
     """
 
-    artifactDir: str = CowrieConfig.get("honeypot", "download_path")
+    download_path = CowrieConfig.get("honeypot", "download_path")
 
-    def __init__(self, label: str) -> None:
-        self.label: str = label
-
-        self.fp = tempfile.NamedTemporaryFile(dir=self.artifactDir, delete=False)
-        self.tempFilename = self.fp.name
-
-        self.shasum: str = ""
-        self.shasumFilename: str = ""
-
-    def __enter__(self) -> IO:
-        return self.fp
-
-    def __exit__(
-            self,
-            etype: Optional[Type[BaseException]],
-            einst: Optional[BaseException],
-            etrace: Optional[TracebackType],
-    ) -> bool:
-        self.close()
-        return True
-
-    def write(self, data: bytes) -> int:
-        return self.fp.write(data)
-
-    def fileno(self) -> int:
-        return self.fp.fileno()
+    def __init__(self, keep_empty: bool = False) -> None:
+        self._f = tempfile.NamedTemporaryFile(dir=self.download_path, delete=False)
+        self._keep_empty = keep_empty
+        self._sha256 = ""
+        self._path = ""
 
     @property
-    def closed(self) -> bool:
-        return self.fp.closed
+    def sha256(self) -> str:
+        return self._sha256
 
-    def close(self, keep_empty: bool = False) -> Optional[tuple[str, str]]:
-        if not keep_empty and self.fp.tell() == 0:
-            os.remove(self.fp.name)
-            return None
+    @property
+    def path(self) -> str:
+        return self._path
 
-        self.fp.seek(0, 0)
+    def write(self, data: bytes) -> int:
+        return self._f.write(data)
 
-        shasum = utils.sha256_of_file_object(self.fp)
+    def close(self) -> None:
+        self._sha256 = utils.sha256_of_file_object(self._f)
 
-        self.fp.close()
+        if not self._keep_empty:
+            self._f.seek(0, 2)
+            if self._f.tell() == 0:
+                self._f.close()
+                os.remove(self._f.name)
+                return
 
-        self.shasum = shasum
+        self._f.close()
 
         try:
-            path = utils.store_file_by_sha256(self.fp.name, shasum)
+            self._path = utils.store_file_by_sha256(self._f.name, self._sha256)
         except FileExistsError:
-            log.msg(f"Not storing duplicate content {self.shasum}")
-            os.remove(self.fp.name)
-            self.shasumFilename = os.path.join(self.artifactDir, self.shasum)
+            log.msg(f"Known artifact; sha256 = {self._sha256}")
+            os.remove(self._f.name)
         else:
-            self.shasumFilename = path
-
-        return self.shasum, self.shasumFilename
+            log.msg(f"New artifact was be saved; sha256 = {self._sha256}, path = {self._path:s}")

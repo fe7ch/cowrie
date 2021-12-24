@@ -5,48 +5,42 @@ import unittest
 
 from cowrie.core.artifact import Artifact
 
-Artifact.artifactDir = os.path.join(tempfile.gettempdir(), "cowrie-artifacts")
+Artifact.download_path = os.path.join(tempfile.gettempdir(), "cowrie-artifacts")
 
 
 class TestArtifact(unittest.TestCase):  # TODO: file_storage_path
     @classmethod
     def setUpClass(cls) -> None:
-        os.mkdir(Artifact.artifactDir)
+        os.mkdir(Artifact.download_path)
 
     @classmethod
     def tearDownClass(cls) -> None:
-        os.rmdir(Artifact.artifactDir)
+        os.rmdir(Artifact.download_path)
 
     def tearDown(self) -> None:
-        for name in os.listdir(Artifact.artifactDir):
-            os.unlink(os.path.join(Artifact.artifactDir, name))
+        for name in os.listdir(Artifact.download_path):
+            os.unlink(os.path.join(Artifact.download_path, name))
 
-    def test_hello_world(self) -> None:
+    def test_artifact_hello_world(self) -> None:
         content = b"Hello world"
 
-        a = Artifact("some_artifact")
+        a = Artifact()
         a.write(content)
-        r = a.close()
-        self.assertIsNotNone(r)
-        sha256, path = r  # type: ignore # TODO: refactor Artifact
+        a.close()
 
-        self.assertEqual(hashlib.sha256(content).hexdigest(), sha256)
-        self.assertTrue(os.path.exists(path))
+        self.assertEqual(a.sha256, hashlib.sha256(content).hexdigest())
+        self.assertTrue(os.path.exists(a.path))
 
-        os.unlink(path)
+        os.unlink(a.path)
 
-    def test_keep_empty(self) -> None:
-        content = b""
+    def test_artifact_keep_empty(self) -> None:
+        a = Artifact(keep_empty=True)
+        a.close()
 
-        a = Artifact("some_empty_artifact")
-        r = a.close(keep_empty=True)
-        self.assertIsNotNone(r)
-        sha256, path = r  # type: ignore # TODO: refactor Artifact
+        self.assertEqual(a.sha256, hashlib.sha256(b"").hexdigest())
+        self.assertTrue(os.path.exists(a.path))
 
-        self.assertEqual(a.shasum, hashlib.sha256(content).hexdigest())
-        self.assertTrue(os.path.exists(path))
-
-        os.unlink(path)
+        os.unlink(a.path)
 
 
 if __name__ == "__main__":

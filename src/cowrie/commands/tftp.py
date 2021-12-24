@@ -34,7 +34,7 @@ class Command_tftp(HoneyPotCommand):
     def makeTftpRetrieval(self):
         progresshook = Progress(self).progresshook
 
-        self.artifactFile = Artifact(self.file_to_get)
+        self.artifactFile = Artifact()
 
         tclient = None
         url = ""
@@ -66,22 +66,22 @@ class Command_tftp(HoneyPotCommand):
             log.msg(
                 format="Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s",
                 url=url,
-                outfile=self.artifactFile.shasumFilename,
-                shasum=self.artifactFile.shasum,
+                outfile=self.artifactFile.path,
+                shasum=self.artifactFile.sha256,
             )
 
             self.protocol.logDispatch(
                 eventid="cowrie.session.file_download",
                 format="Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s",
                 url=url,
-                outfile=self.artifactFile.shasumFilename,
-                shasum=self.artifactFile.shasum,
+                outfile=self.artifactFile.path,
+                shasum=self.artifactFile.sha256,
                 destfile=self.file_to_get,
             )
 
             # Update the honeyfs to point to downloaded file
             self.fs.update_realfile(
-                self.fs.getfile(self.file_to_get), self.artifactFile.shasumFilename
+                self.fs.getfile(self.file_to_get), self.artifactFile.path
             )
             self.fs.chown(
                 self.file_to_get, self.protocol.user.uid, self.protocol.user.gid

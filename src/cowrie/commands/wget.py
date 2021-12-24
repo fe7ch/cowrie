@@ -169,7 +169,7 @@ class Command_wget(HoneyPotCommand):
 
         # File in host's fs that will hold content of the downloaded file
         # HTTPDownloader will close() the file object so need to preserve the name
-        self.artifactFile = Artifact(self.outfile)
+        self.artifactFile = Artifact()
 
         factory = HTTPProgressDownloader(
             self, fakeoutfile, url, self.artifactFile, *args, **kwargs
@@ -199,16 +199,16 @@ class Command_wget(HoneyPotCommand):
         self.connection.transport.loseConnection()
 
     def success(self, data):
-        if not os.path.isfile(self.artifactFile.shasumFilename):
-            log.msg("there's no file " + self.artifactFile.shasumFilename)
+        if not os.path.isfile(self.artifactFile.path):
+            log.msg("there's no file " + self.artifactFile.path)
             self.exit()
 
         # log to cowrie.log
         log.msg(
             format="Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s",
             url=self.url,
-            outfile=self.artifactFile.shasumFilename,
-            shasum=self.artifactFile.shasum,
+            outfile=self.artifactFile.path,
+            shasum=self.artifactFile.sha256,
         )
 
         # log to output modules
@@ -216,18 +216,18 @@ class Command_wget(HoneyPotCommand):
             eventid="cowrie.session.file_download",
             format="Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s",
             url=self.url,
-            outfile=self.artifactFile.shasumFilename,
-            shasum=self.artifactFile.shasum,
+            outfile=self.artifactFile.path,
+            shasum=self.artifactFile.sha256,
         )
 
         # Update honeyfs to point to downloaded file or write to screen
         if self.outfile != "-":
             self.fs.update_realfile(
-                self.fs.getfile(self.outfile), self.artifactFile.shasumFilename
+                self.fs.getfile(self.outfile), self.artifactFile.path
             )
             self.fs.chown(self.outfile, self.protocol.user.uid, self.protocol.user.gid)
         else:
-            with open(self.artifactFile.shasumFilename, "rb") as f:
+            with open(self.artifactFile.path, "rb") as f:
                 self.writeBytes(f.read())
 
         self.exit()
