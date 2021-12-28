@@ -145,7 +145,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
         if self.stdinlogOpen:
             try:
                 sha256 = utils.sha256_of_file(self.stdinlogFile)
-                path, duplicate = utils.store_file_by_sha256(sha256, self.stdinlogFile)
+                path, duplicate = utils.store_file_by_sha256(self.stdinlogFile, sha256)
                 if duplicate:
                     os.remove(self.stdinlogFile)
                 log.msg(eventid="cowrie.session.file_download",
@@ -173,7 +173,7 @@ class LoggingServerProtocol(insults.ServerProtocol):
                         os.remove(rf)
                         continue
                     sha256 = utils.sha256_of_file(rf)
-                    path, duplicate = utils.store_file_by_sha256(sha256, rf)
+                    path, duplicate = utils.store_file_by_sha256(rf, sha256)
                     if duplicate:
                         os.remove(rf)
                     log.msg(eventid="cowrie.session.file_download",

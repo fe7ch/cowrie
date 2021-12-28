@@ -504,7 +504,7 @@ class HoneyPotFilesystem:
             return
         if self.tempfiles[fd] is not None:
             sha256 = utils.sha256_of_file(self.tempfiles[fd])
-            path, duplicate = utils.store_file_by_sha256(sha256, self.tempfiles[fd])
+            path, duplicate = utils.store_file_by_sha256(self.tempfiles[fd], sha256)
             if duplicate:
                 os.remove(self.tempfiles[fd])
 
