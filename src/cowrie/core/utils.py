@@ -9,6 +9,7 @@ import re
 import shutil
 from typing import BinaryIO, IO, Tuple
 
+import fasteners
 from twisted.application import internet
 from twisted.internet import endpoints
 
@@ -147,37 +148,40 @@ def sha256_of_file(path: str, block_size: int = 4096) -> str:
 
 def sha256_of_file_object(f: IO, block_size: int = 4096) -> str:
     """Calculate sha256 of an already opened file."""
-    if f.closed or not ("r" in f.mode and "b" in f.mode):  # TODO: raise
-        return ""
+    if f.closed:
+        raise ValueError(f"file already closed; path = {f.name:s}")
+    if not ("r" in f.mode and "b" in f.mode):
+        raise ValueError(f"invalid file mode; mode = {f.mode:s}")
     f.seek(0, 0)
     h = hashlib.sha256()
-    for block in iter(lambda: f.read(block_size), b""):  # type: ignore # TODO: mypy error
+    for block in iter(lambda: f.read(block_size), b""):  # type: ignore
         h.update(block)
     return h.hexdigest()
 
 
-def store_file_by_sha256(temp_path: str, sha256: str) -> Tuple[str, bool]:  # TODO: race condition
+def store_file_by_sha256(temp_path: str, sha256: str) -> Tuple[str, bool]:
     """Move a file in the sha256-based file storage."""
     if not sha256_re.match(sha256):
         raise ValueError(f"sha256 = {sha256:s}")
 
-    path = os.path.join(file_storage_path, sha256[:2], sha256[2:4], sha256)
-    if os.path.exists(path):
-        return path, True
+    with fasteners.InterProcessLock(os.path.join(file_storage_path, sha256 + ".lock")):
+        path = os.path.join(file_storage_path, sha256[:2], sha256[2:4], sha256)
+        if os.path.exists(path):
+            return path, True
 
-    a = os.path.dirname(path)
-    if not os.path.exists(a):
-        b = os.path.dirname(a)
-        if not os.path.exists(b):
-            os.mkdir(b)
-        os.mkdir(a)
+        a = os.path.dirname(path)
+        if not os.path.exists(a):
+            b = os.path.dirname(a)
+            if not os.path.exists(b):
+                os.mkdir(b)
+            os.mkdir(a)
 
-    try:
-        shutil.move(temp_path, path)
-        m = os.umask(0)
-        os.umask(m)
-        os.chmod(path, 0o666 & ~m)
-    except OSError:
-        raise
+        try:
+            shutil.move(temp_path, path)
+            m = os.umask(0)
+            os.umask(m)
+            os.chmod(path, 0o666 & ~m)
+        except OSError:
+            raise
 
     return path, False
