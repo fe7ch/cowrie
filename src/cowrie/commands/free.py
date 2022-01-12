@@ -34,7 +34,9 @@ class Command_free(HoneyPotCommand):
         "For more details see free(1).\n"
     )
     VERSION = "free from procps-ng 3.3.9\n"
+
     MEMINFO_KEYS = ("MemTotal", "MemFree", "Shmem", "Buffers", "Cached", "SwapTotal", "SwapFree")
+
     OUTPUT_FMT = (
         "             total       used       free     shared    buffers     cached\n"
         "Mem:    {MemTotal:>10} {MemUsed:>10} {MemFree:>10} {Shmem:>10} {Buffers:>10} {Cached:>10}\n"
@@ -44,7 +46,6 @@ class Command_free(HoneyPotCommand):
     OUTPUT_TOTAL_FMT = (
         "Total:  {TotalTotal:>10} {TotalUsed:>10} {TotalFree:>10}\n"
     )
-
     MAGNITUDE = ("B", "M", "G", "T", "Z")
 
     def call(self) -> None:
@@ -60,7 +61,7 @@ class Command_free(HoneyPotCommand):
 
         tmp = [oa[0] for oa in opts]
         if not tmp:
-            self._magniture_format(meminfo)
+            self._magnitude_format(meminfo)
             return
 
         total = "--total" in tmp or "-t" in tmp
@@ -76,23 +77,23 @@ class Command_free(HoneyPotCommand):
 
         for opt, arg in opts:
             if opt in ("-b", "--bytes"):
-                self._magniture_format(meminfo, fmt="bytes", total=total)
+                self._magnitude_format(meminfo, fmt="bytes", total=total)
                 break
             if opt in ("-m", "--mega"):
-                self._magniture_format(meminfo, fmt="mega", total=total)
+                self._magnitude_format(meminfo, fmt="mega", total=total)
                 break
             if opt in ("-g", "--giga"):
-                self._magniture_format(meminfo, fmt="giga", total=total)
+                self._magnitude_format(meminfo, fmt="giga", total=total)
                 break
             if opt in ("-k", "--kilo"):
-                self._magniture_format(meminfo, total=total)
+                self._magnitude_format(meminfo, total=total)
             if opt == "--tera":
-                self._magniture_format(meminfo, fmt="tera", total=total)
+                self._magnitude_format(meminfo, fmt="tera", total=total)
                 break
-            self._magniture_format(meminfo, total=total)
+            self._magnitude_format(meminfo, total=total)
             break
 
-    def _magniture_format(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
+    def _magnitude_format(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
         if fmt == "bytes":
             for key, value in meminfo.items():
                 meminfo[key] = value * 1024
@@ -135,10 +136,10 @@ class Command_free(HoneyPotCommand):
         r["TotalFree"] = r["MemFree"] + r["SwapFree"]
         return r
 
-    def _print_output(self, mem_dict, total=False):
-        self.write(Command_free.OUTPUT_FMT.format(**mem_dict))
+    def _print_output(self, meminfo, total=False):
+        self.write(Command_free.OUTPUT_FMT.format(**meminfo))
         if total:
-            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**mem_dict))
+            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**meminfo))
 
     def _help(self) -> None:
         self.write(Command_free.HELP)
