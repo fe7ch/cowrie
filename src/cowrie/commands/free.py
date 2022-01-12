@@ -111,7 +111,7 @@ class Command_free(HoneyPotCommand):
         self._print_output(meminfo, total)
 
     def _human_format(self, meminfo: Dict[str, int], total: bool = False) -> None:
-        tmp = {}
+        tmp: Dict[str, str] = {}
         for key in meminfo:
             index = 0
             value = float(meminfo[key])
@@ -135,7 +135,7 @@ class Command_free(HoneyPotCommand):
         r["TotalFree"] = r["MemFree"] + r["SwapFree"]
         return r
 
-    def _print_output(self, meminfo, total=False):
+    def _print_output(self, meminfo: Dict[str, str], total: bool = False) -> None:
         self.write(Command_free.OUTPUT_FMT.format(**meminfo))
         if total:
             self.write(Command_free.OUTPUT_TOTAL_FMT.format(**meminfo))
