@@ -65,6 +65,7 @@ class Command_free(HoneyPotCommand):
             return
 
         total = "--total" in tmp or "-t" in tmp
+
         if "--help" in tmp:
             self._help()
             return
@@ -75,7 +76,7 @@ class Command_free(HoneyPotCommand):
             self._human_format(meminfo, total=total)
             return
 
-        for opt, arg in opts:
+        for opt, _ in opts:
             if opt in ("-b", "--bytes"):
                 self._magnitude_format(meminfo, fmt="bytes", total=total)
                 break
@@ -93,22 +94,23 @@ class Command_free(HoneyPotCommand):
                 break
 
     def _magnitude_format(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
+        tmp: Dict[str, str] = {}
         if fmt == "bytes":
             for key, value in meminfo.items():
-                meminfo[key] = value * 1024
-        # elif fmt == "kilo":
-        #     for key, value in meminfo.items():
-        #         meminfo[key] = value
+                tmp[key] = str(value * 1024)
+        elif fmt == "kilo":
+            for key, value in meminfo.items():
+                tmp[key] = str(value)
         elif fmt == "mega":
             for key, value in meminfo.items():
-                meminfo[key] = value // 1024
+                tmp[key] = str(value // 1024)
         elif fmt == "giga":
             for key, value in meminfo.items():
-                meminfo[key] = (value // 1024) // 1024
+                tmp[key] = str((value // 1024) // 1024)
         elif fmt == "tera":
             for key, value in meminfo.items():
-                meminfo[key] = ((value // 1024) // 1024) // 1024
-        self._print_output(meminfo, total)
+                tmp[key] = str(((value // 1024) // 1024) // 1024)
+        self._print_output(tmp, total)
 
     def _human_format(self, meminfo: Dict[str, int], total: bool = False) -> None:
         tmp: Dict[str, str] = {}
