@@ -108,26 +108,13 @@ class Command_free(HoneyPotCommand):
         elif fmt == "tera":
             for key, value in meminfo.items():
                 meminfo[key] = ((value // 1024) // 1024) // 1024
-        if total:
-            meminfo.update({"TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"]})
-            meminfo.update({"TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"]})
-            meminfo.update({"TotalFree": meminfo["MemFree"] + meminfo["SwapFree"]})
         self._print_output(meminfo, total)
 
     def _human_format(self, meminfo: Dict[str, int], total: bool = False) -> None:
         tmp = {}
-        totalinfo = {}
-        if total:
-            totalinfo = {
-                "TotalTotal": meminfo["MemTotal"] + meminfo["SwapTotal"],
-                "TotalUsed": meminfo["MemUsed"] + meminfo["SwapUsed"],
-                "TotalFree": meminfo["MemFree"] + meminfo["SwapFree"],
-            }
-
-        union = {**meminfo, **totalinfo}
-        for key in union:
+        for key in meminfo:
             index = 0
-            value = float(union[key])
+            value = float(meminfo[key])
             while value >= 1024 and index < len(Command_free.MAGNITUDE):
                 value /= 1024
                 index += 1
@@ -143,6 +130,9 @@ class Command_free(HoneyPotCommand):
                 r[key] = int(value[:value.rfind(" ")])
         r["MemUsed"] = r["MemTotal"] - r["MemFree"]
         r["SwapUsed"] = r["SwapTotal"] - r["SwapFree"]
+        r["TotalTotal"] = r["MemTotal"] + r["SwapTotal"]
+        r["TotalUsed"] = r["MemUsed"] + r["SwapUsed"]
+        r["TotalFree"] = r["MemFree"] + r["SwapFree"]
         return r
 
     def _print_output(self, dict, total=False):
