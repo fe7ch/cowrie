@@ -63,8 +63,7 @@ class Command_free(HoneyPotCommand):
             self._magniture_format(meminfo)
             return
 
-        total = "--total" in tmp or "-t" in tmp:
-            total = True
+        total = "--total" in tmp or "-t" in tmp
         if "--help" in tmp:
             self._help()
             return
