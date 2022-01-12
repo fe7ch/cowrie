@@ -96,9 +96,9 @@ class Command_free(HoneyPotCommand):
         if fmt == "bytes":
             for key, value in meminfo.items():
                 meminfo[key] = value * 1024
-        elif fmt == "kilo":
-            for key, value in meminfo.items():
-                meminfo[key] = value
+        # elif fmt == "kilo":
+        #     for key, value in meminfo.items():
+        #         meminfo[key] = value
         elif fmt == "mega":
             for key, value in meminfo.items():
                 meminfo[key] = value // 1024
