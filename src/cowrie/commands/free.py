@@ -135,10 +135,10 @@ class Command_free(HoneyPotCommand):
         r["TotalFree"] = r["MemFree"] + r["SwapFree"]
         return r
 
-    def _print_output(self, dict, total=False):
-        self.write(Command_free.OUTPUT_FMT.format(**dict))
+    def _print_output(self, mem_dict, total=False):
+        self.write(Command_free.OUTPUT_FMT.format(**mem_dict))
         if total:
-            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**dict))
+            self.write(Command_free.OUTPUT_TOTAL_FMT.format(**mem_dict))
 
     def _help(self) -> None:
         self.write(Command_free.HELP)
