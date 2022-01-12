@@ -87,11 +87,10 @@ class Command_free(HoneyPotCommand):
                 break
             if opt in ("-k", "--kilo"):
                 self._magnitude_format(meminfo, total=total)
+                break
             if opt == "--tera":
                 self._magnitude_format(meminfo, fmt="tera", total=total)
                 break
-            self._magnitude_format(meminfo, total=total)
-            break
 
     def _magnitude_format(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
         if fmt == "bytes":
