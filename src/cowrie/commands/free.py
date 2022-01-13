@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import getopt
-from typing import Dict
+from typing import Any, Dict, Tuple
 
 from cowrie.shell.command import HoneyPotCommand
 
@@ -37,6 +37,8 @@ class Command_free(HoneyPotCommand):
 
     MEMINFO_KEYS = ("MemTotal", "MemFree", "Shmem", "Buffers", "Cached", "SwapTotal", "SwapFree")
 
+    MAGNITUDE = ("B", "M", "G", "T", "Z")
+
     OUTPUT_FMT = (
         "             total       used       free     shared    buffers     cached\n"
         "Mem:    {MemTotal:>10} {MemUsed:>10} {MemFree:>10} {Shmem:>10} {Buffers:>10} {Cached:>10}\n"
@@ -46,7 +48,14 @@ class Command_free(HoneyPotCommand):
     OUTPUT_TOTAL_FMT = (
         "Total:  {TotalTotal:>10} {TotalUsed:>10} {TotalFree:>10}\n"
     )
-    MAGNITUDE = ("B", "M", "G", "T", "Z")
+
+    def __init__(self, *args: Tuple[Any], **kwargs: Dict[str, Any]) -> None:
+        super().__init__(*args, **kwargs)
+        self._help = False
+        self._version = False
+        self._total = False
+        self._human = False
+        self._fmt = "kilo"
 
     def call(self) -> None:
         try:
@@ -54,77 +63,50 @@ class Command_free(HoneyPotCommand):
                 self.args, "hbkmgVt", ["human", "bytes", "kilo", "mega", "giga", "tera", "help", "version", "total"])
         except getopt.GetoptError as e:
             self.errorWrite("free: invalid option -- {}\n".format(e.opt))
-            self._help()
+            self._show_help()
             return
 
-        meminfo = self._read_meminfo()
-
-        tmp = [oa[0] for oa in opts]
-        if not tmp:
-            self._magnitude_format(meminfo)
-            return
-
-        total = "--total" in tmp or "-t" in tmp
-
-        if "--help" in tmp:
-            self._help()
-            return
-        if "--version" in tmp or "-V" in tmp:
-            self._version()
-            return
-        if "--human" in tmp or "-h" in tmp:
-            self._human_format(meminfo, total=total)
-            return
+        n_fmts = 0
 
         for opt, _ in opts:
-            if opt in ("-b", "--bytes"):
-                self._magnitude_format(meminfo, fmt="bytes", total=total)
-                break
-            if opt in ("-m", "--mega"):
-                self._magnitude_format(meminfo, fmt="mega", total=total)
-                break
-            if opt in ("-g", "--giga"):
-                self._magnitude_format(meminfo, fmt="giga", total=total)
-                break
-            if opt in ("-k", "--kilo"):
-                self._magnitude_format(meminfo, total=total)
-                break
-            if opt == "--tera":
-                self._magnitude_format(meminfo, fmt="tera", total=total)
-                break
+            if opt == "--help":
+                self._show_help() if n_fmts <= 1 else self._show_incompatible_formats_error()
+                return
+            if opt in ("--version", "-V"):
+                self._show_version() if n_fmts <= 1 else self._show_incompatible_formats_error()
+                return
 
-    def _magnitude_format(self, meminfo: Dict[str, int], fmt: str = "kilo", total: bool = False) -> None:
-        tmp: Dict[str, str] = {}
-        if fmt == "bytes":
-            for key, value in meminfo.items():
-                tmp[key] = str(value * 1024)
-        elif fmt == "kilo":
-            for key, value in meminfo.items():
-                tmp[key] = str(value)
-        elif fmt == "mega":
-            for key, value in meminfo.items():
-                tmp[key] = str(value // 1024)
-        elif fmt == "giga":
-            for key, value in meminfo.items():
-                tmp[key] = str((value // 1024) // 1024)
-        elif fmt == "tera":
-            for key, value in meminfo.items():
-                tmp[key] = str(((value // 1024) // 1024) // 1024)
-        self._print_output(tmp, total)
+            if opt in ("--total", "-t"):
+                self._total = True
+            elif opt in ("--human", "-h"):
+                self._human = True
 
-    def _human_format(self, meminfo: Dict[str, int], total: bool = False) -> None:
-        tmp: Dict[str, str] = {}
-        for key in meminfo:
-            index = 0
-            value = float(meminfo[key])
-            while value >= 1024 and index < len(Command_free.MAGNITUDE):
-                value /= 1024
-                index += 1
-            tmp[key] = "{:g}{}".format(round(value, 1), Command_free.MAGNITUDE[index])
-        self._print_output(tmp, total)
+            elif opt in ("--bytes", "-b"):
+                self._fmt = "bytes"
+                n_fmts += 1
+            elif opt in ("--kilo", "-k"):
+                n_fmts += 1
+            elif opt in ("--mega", "-m"):
+                self._fmt = "mega"
+                n_fmts += 1
+            elif opt in ("--giga", "-g"):
+                self._fmt = "giga"
+                n_fmts += 1
+            elif opt in ("--tera", "-t"):
+                self._fmt = "tera"
+                n_fmts += 1
+
+        if n_fmts <= 1:
+            meminfo = self._read_meminfo()
+            if self._human:
+                self._human_format(meminfo)
+            else:
+                self._magnitude_format(meminfo)
+        else:
+            self._show_incompatible_formats_error()
 
     def _read_meminfo(self) -> Dict[str, int]:
-        r = {}
+        r: Dict[str, int] = {}
         data = self.fs.file_contents("/proc/meminfo")
         for line in data.decode().splitlines():
             key, value = line.split(":")
@@ -132,21 +114,55 @@ class Command_free(HoneyPotCommand):
                 r[key] = int(value[:value.rfind(" ")])
         r["MemUsed"] = r["MemTotal"] - r["MemFree"]
         r["SwapUsed"] = r["SwapTotal"] - r["SwapFree"]
-        r["TotalTotal"] = r["MemTotal"] + r["SwapTotal"]
-        r["TotalUsed"] = r["MemUsed"] + r["SwapUsed"]
-        r["TotalFree"] = r["MemFree"] + r["SwapFree"]
+        if self._total:
+            r["TotalTotal"] = r["MemTotal"] + r["SwapTotal"]
+            r["TotalUsed"] = r["MemUsed"] + r["SwapUsed"]
+            r["TotalFree"] = r["MemFree"] + r["SwapFree"]
         return r
 
-    def _print_output(self, meminfo: Dict[str, str], total: bool = False) -> None:
+    def _human_format(self, meminfo: Dict[str, int]) -> None:
+        tmp: Dict[str, str] = {}
+        for key in meminfo:
+            value = float(meminfo[key])
+            i = 0
+            while value >= 1024 and i < len(Command_free.MAGNITUDE):
+                value /= 1024
+                i += 1
+            tmp[key] = "{:g}{}".format(round(value, 1), Command_free.MAGNITUDE[i])
+        self._print_output(tmp)
+
+    def _magnitude_format(self, meminfo: Dict[str, int]) -> None:
+        tmp: Dict[str, str] = {}
+        if self._fmt == "bytes":
+            for key, value in meminfo.items():
+                tmp[key] = str(value * 1024)
+        elif self._fmt == "kilo":
+            for key, value in meminfo.items():
+                tmp[key] = str(value)
+        elif self._fmt == "mega":
+            for key, value in meminfo.items():
+                tmp[key] = str(value // 1024)
+        elif self._fmt == "giga":
+            for key, value in meminfo.items():
+                tmp[key] = str((value // 1024) // 1024)
+        elif self._fmt == "tera":
+            for key, value in meminfo.items():
+                tmp[key] = str(((value // 1024) // 1024) // 1024)
+        self._print_output(tmp)
+
+    def _print_output(self, meminfo: Dict[str, str]) -> None:
         self.write(Command_free.OUTPUT_FMT.format(**meminfo))
-        if total:
+        if self._total:
             self.write(Command_free.OUTPUT_TOTAL_FMT.format(**meminfo))
 
-    def _help(self) -> None:
+    def _show_help(self) -> None:
         self.write(Command_free.HELP)
 
-    def _version(self) -> None:
+    def _show_version(self) -> None:
         self.write(Command_free.VERSION)
+
+    def _show_incompatible_formats_error(self) -> None:
+        self.errorWrite("free: Multiple unit options doesn't make sense.\n")
 
 
 commands = {
