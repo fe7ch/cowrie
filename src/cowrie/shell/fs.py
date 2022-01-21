@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import errno
 import fnmatch
-import hashlib
 import os
 import pickle
 import re
@@ -17,6 +16,7 @@ from typing import Any, Optional
 
 from twisted.python import log
 
+from cowrie.core import utils
 from cowrie.core.config import CowrieConfig
 
 (
@@ -503,24 +503,19 @@ class HoneyPotFilesystem:
         if not fd:
             return
         if self.tempfiles[fd] is not None:
-            shasum: str = hashlib.sha256(
-                open(self.tempfiles[fd], "rb").read()
-            ).hexdigest()
-            shasumfile: str = (
-                CowrieConfig.get("honeypot", "download_path") + "/" + shasum
-            )
-            if os.path.exists(shasumfile):
+            sha256 = utils.sha256_of_file(self.tempfiles[fd])
+            path, duplicate = utils.store_file_by_sha256(self.tempfiles[fd], sha256)
+            if duplicate:
                 os.remove(self.tempfiles[fd])
-            else:
-                os.rename(self.tempfiles[fd], shasumfile)
-            self.update_realfile(self.getfile(self.filenames[fd]), shasumfile)
-            log.msg(
-                format='SFTP Uploaded file "%(filename)s" to %(outfile)s',
-                eventid="cowrie.session.file_upload",
-                filename=os.path.basename(self.filenames[fd]),
-                outfile=shasumfile,
-                shasum=shasum,
-            )
+
+            self.update_realfile(self.getfile(self.filenames[fd]), path)
+
+            log.msg(format='SFTP Uploaded file "%(filename)s" to %(outfile)s',
+                    eventid="cowrie.session.file_upload",
+                    filename=os.path.basename(self.filenames[fd]),
+                    outfile=path,
+                    shasum=sha256)
+
             del self.tempfiles[fd]
             del self.filenames[fd]
         os.close(fd)

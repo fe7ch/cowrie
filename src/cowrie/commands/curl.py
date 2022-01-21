@@ -246,7 +246,7 @@ class Command_curl(HoneyPotCommand):
         url = url.encode("ascii")
         self.url = url
 
-        self.artifactFile = Artifact(outfile)
+        self.artifactFile = Artifact()
         # HTTPDownloader will close() the file object so need to preserve the name
 
         self.deferred = self.download(url, outfile, self.artifactFile)
@@ -302,26 +302,26 @@ class Command_curl(HoneyPotCommand):
         self.connection.transport.loseConnection()
 
     def success(self, data, outfile):
-        if not os.path.isfile(self.artifactFile.shasumFilename):
-            log.msg("there's no file " + self.artifactFile.shasumFilename)
+        if not os.path.isfile(self.artifactFile.path):
+            log.msg("there's no file " + self.artifactFile.path)
             self.exit()
 
         self.protocol.logDispatch(
             eventid="cowrie.session.file_download",
             format="Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s",
             url=self.url,
-            outfile=self.artifactFile.shasumFilename,
-            shasum=self.artifactFile.shasum,
+            outfile=self.artifactFile.path,
+            shasum=self.artifactFile.sha256,
         )
 
         # Update the honeyfs to point to downloaded file if output is a file
         if outfile:
             self.fs.update_realfile(
-                self.fs.getfile(outfile), self.artifactFile.shasumFilename
+                self.fs.getfile(outfile), self.artifactFile.path
             )
             self.fs.chown(outfile, self.protocol.user.uid, self.protocol.user.gid)
         else:
-            with open(self.artifactFile.shasumFilename, "rb") as f:
+            with open(self.artifactFile.path, "rb") as f:
                 self.writeBytes(f.read())
 
         self.exit()

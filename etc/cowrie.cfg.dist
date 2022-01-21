@@ -41,6 +41,12 @@ log_path = var/log/cowrie
 download_path = ${honeypot:state_path}/downloads
 
 
+# File storage directory
+#
+# (default: file_storage)
+file_storage_path = ${honeypot:state_path}/file_storage
+
+
 # Directory for static data files
 #
 # (default: share/cowrie)

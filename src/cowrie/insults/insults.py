@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import os
 import time
 from typing import Any
@@ -11,7 +10,7 @@ from typing import Any
 from twisted.conch.insults import insults
 from twisted.python import log
 
-from cowrie.core import ttylog
+from cowrie.core import ttylog, utils
 from cowrie.core.config import CowrieConfig
 from cowrie.shell import protocol
 
@@ -145,24 +144,16 @@ class LoggingServerProtocol(insults.ServerProtocol):
         """
         if self.stdinlogOpen:
             try:
-                with open(self.stdinlogFile, "rb") as f:
-                    shasum = hashlib.sha256(f.read()).hexdigest()
-                    shasumfile = os.path.join(self.downloadPath, shasum)
-                    if os.path.exists(shasumfile):
-                        os.remove(self.stdinlogFile)
-                        duplicate = True
-                    else:
-                        os.rename(self.stdinlogFile, shasumfile)
-                        duplicate = False
-
-                log.msg(
-                    eventid="cowrie.session.file_download",
-                    format="Saved stdin contents with SHA-256 %(shasum)s to %(outfile)s",
-                    duplicate=duplicate,
-                    outfile=shasumfile,
-                    shasum=shasum,
-                    destfile="",
-                )
+                sha256 = utils.sha256_of_file(self.stdinlogFile)
+                path, duplicate = utils.store_file_by_sha256(self.stdinlogFile, sha256)
+                if duplicate:
+                    os.remove(self.stdinlogFile)
+                log.msg(eventid="cowrie.session.file_download",
+                        format="Saved stdin contents with SHA-256 %(shasum)s to %(outfile)s",
+                        duplicate=duplicate,
+                        outfile=path,
+                        shasum=sha256,
+                        destfile="")
             except OSError:
                 pass
             finally:
@@ -170,41 +161,29 @@ class LoggingServerProtocol(insults.ServerProtocol):
 
         if self.redirFiles:
             for rp in self.redirFiles:
-
                 rf = rp[0]
-
                 if rp[1]:
                     url = rp[1]
                 else:
                     url = rf[rf.find("redir_") + len("redir_") :]
-
                 try:
                     if not os.path.exists(rf):
                         continue
-
                     if os.path.getsize(rf) == 0:
                         os.remove(rf)
                         continue
-
-                    with open(rf, "rb") as f:
-                        shasum = hashlib.sha256(f.read()).hexdigest()
-                        shasumfile = os.path.join(self.downloadPath, shasum)
-                        if os.path.exists(shasumfile):
-                            os.remove(rf)
-                            duplicate = True
-                        else:
-                            os.rename(rf, shasumfile)
-                            duplicate = False
-                    log.msg(
-                        eventid="cowrie.session.file_download",
-                        format="Saved redir contents with SHA-256 %(shasum)s to %(outfile)s",
-                        duplicate=duplicate,
-                        outfile=shasumfile,
-                        shasum=shasum,
-                        destfile=url,
-                    )
+                    sha256 = utils.sha256_of_file(rf)
+                    path, duplicate = utils.store_file_by_sha256(rf, sha256)
+                    if duplicate:
+                        os.remove(rf)
+                    log.msg(eventid="cowrie.session.file_download",
+                            format="Saved redir contents with SHA-256 %(shasum)s to %(outfile)s",
+                            duplicate=duplicate,
+                            outfile=path,
+                            shasum=sha256,
+                            destfile=url)
                 except OSError:
-                    pass
+                    log.err("Error occurred")
             self.redirFiles.clear()
 
         if self.ttylogEnabled and self.ttylogOpen:

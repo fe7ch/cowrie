@@ -173,7 +173,7 @@ Download a file via FTP
             self.url_log = f"{self.url_log}:{self.port}"
         self.url_log = f"{self.url_log}/{self.remote_path}"
 
-        self.artifactFile = Artifact(self.local_file)
+        self.artifactFile = Artifact()
 
         result = self.ftp_download()
 
@@ -198,25 +198,25 @@ Download a file via FTP
         log.msg(
             format="Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s",
             url=self.url_log,
-            outfile=self.artifactFile.shasumFilename,
-            shasum=self.artifactFile.shasum,
+            outfile=self.artifactFile.path,
+            shasum=self.artifactFile.sha256,
         )
 
         self.protocol.logDispatch(
             eventid="cowrie.session.file_download",
             format="Downloaded URL (%(url)s) with SHA-256 %(shasum)s to %(outfile)s",
             url=self.url_log,
-            outfile=self.artifactFile.shasumFilename,
-            shasum=self.artifactFile.shasum,
+            outfile=self.artifactFile.path,
+            shasum=self.artifactFile.sha256,
             destfile=self.local_file,
         )
 
         # Update the honeyfs to point to downloaded file
         self.fs.mkfile(
-            fakeoutfile, 0, 0, os.path.getsize(self.artifactFile.shasumFilename), 33188
+            fakeoutfile, 0, 0, os.path.getsize(self.artifactFile.path), 33188
         )
         self.fs.update_realfile(
-            self.fs.getfile(fakeoutfile), self.artifactFile.shasumFilename
+            self.fs.getfile(fakeoutfile), self.artifactFile.path
         )
         self.fs.chown(fakeoutfile, self.protocol.user.uid, self.protocol.user.gid)
 
