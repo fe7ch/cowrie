@@ -201,24 +201,40 @@ class Command_scp(HoneyPotCommand):
         return data
 
     def handle_CTRL_D(self):
-        if (
-            self.protocol.terminal.stdinlogOpen
-            and self.protocol.terminal.stdinlogFile
-            and os.path.exists(self.protocol.terminal.stdinlogFile)
-        ):
-            with open(self.protocol.terminal.stdinlogFile, "rb") as f:
-                data = f.read()
-                header = data[: data.find(b"\n")]
-                if re.match(r"C0[\d]{3} [\d]+ [^\s]+", header.decode()):
-                    data = data[data.find(b"\n") + 1 :]
-                else:
-                    data = ""
 
-            if data:
-                with open(self.protocol.terminal.stdinlogFile, "wb") as f:
-                    f.write(data)
+        if self.protocol.terminal.stdinlogOpen and self.protocol.terminal.stdinlogFile and \
+                os.path.exists(self.protocol.terminal.stdinlogFile):
+            with open(self.protocol.terminal.stdinlogFile, 'rb') as f:
+                data = f.read()
+                while True:
+
+                    if not data:
+                        break
+
+                    data = self.parse_scp_data(data)
+
+            self.protocol.terminal.stdinlogOpen = False
+            os.remove(self.protocol.terminal.stdinlogFile)
 
         self.exit()
+
+    def exit(self) -> None:
+        """
+        Sometimes client is disconnected and command exits after. So cmdstack is gone
+        """
+        if self.protocol.terminal.stdinlogOpen and self.protocol.terminal.stdinlogFile and \
+                os.path.exists(self.protocol.terminal.stdinlogFile):
+            with open(self.protocol.terminal.stdinlogFile, 'rb') as f:
+                data = f.read()
+                while True:
+
+                    if not data:
+                        break
+
+                    data = self.parse_scp_data(data)
+
+            self.protocol.terminal.stdinlogOpen = False
+            os.remove(self.protocol.terminal.stdinlogFile)
 
 
 commands["/usr/bin/scp"] = Command_scp
