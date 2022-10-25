@@ -8,7 +8,7 @@ import copy
 import os
 import re
 import shlex
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from twisted.internet import error
 from twisted.python import failure, log
@@ -25,7 +25,7 @@ class HoneyPotShell:
         self.protocol = protocol
         self.interactive: bool = interactive
         self.redirect: bool = redirect  # to support output redirection
-        self.cmdpending: list[list[str]] = []
+        self.cmdpending: List[List[str]] = []
         self.environ: dict[str, str] = copy.copy(protocol.environ)
         if hasattr(protocol.user, "windowSize"):
             self.environ["COLUMNS"] = str(protocol.user.windowSize[1])
@@ -78,7 +78,7 @@ class HoneyPotShell:
         # Add these special characters that are not in the default lexer
         self.lexer.wordchars += "@%{}=$:+^,()`"
 
-        tokens: list[str] = []
+        tokens: List[str] = []
 
         while True:
             try:
@@ -237,14 +237,14 @@ class HoneyPotShell:
             else:
                 self.showPrompt()
 
-        def parse_arguments(arguments: str) -> list[str]:
+        def parse_arguments(arguments: List[str]) -> List[str]:
             parsed_arguments = []
             for arg in arguments:
                 parsed_arguments.append(arg)
 
             return parsed_arguments
 
-        def parse_file_arguments(arguments: str) -> list[str]:
+        def parse_file_arguments(arguments: str) -> List[str]:
             """
             Look up arguments in the file system
             """
@@ -281,12 +281,12 @@ class HoneyPotShell:
         # Probably no reason to be this comprehensive for just PATH...
         environ = copy.copy(self.environ)
         cmd_array = []
-        cmd = {}
+        cmd: Dict[str, Any] = {}
         while cmdAndArgs:
             piece = cmdAndArgs.pop(0)
             if piece.count("="):
-                key, value = piece.split("=", 1)
-                environ[key] = value
+                key, val = piece.split("=", 1)
+                environ[key] = val
                 continue
             cmd["command"] = piece
             cmd["rargs"] = []
@@ -297,7 +297,7 @@ class HoneyPotShell:
             return
 
         pipe_indices = [i for i, x in enumerate(cmdAndArgs) if x == "|"]
-        multipleCmdArgs = []
+        multipleCmdArgs: List[List[str]] = []
         pipe_indices.append(len(cmdAndArgs))
         start = 0
 
@@ -356,6 +356,11 @@ class HoneyPotShell:
                         "utf8"
                     )
                 )
+
+                if not self.interactive:
+                    stat = failure.Failure(error.ProcessDone(status=""))
+                    self.protocol.terminal.transport.processEnded(stat)
+
                 runOrPrompt()
                 pp = None  # Got a error. Don't run any piped commands
                 break
@@ -413,10 +418,8 @@ class HoneyPotShell:
 
     def handle_CTRL_D(self) -> None:
         log.msg("Received CTRL-D, exiting..")
-
-        cmdclass = self.protocol.commands["exit"]
-        pp = StdOutStdErrEmulationProtocol(self.protocol, cmdclass, None, None, None)
-        self.protocol.call_command(pp, self.protocol.commands["exit"])
+        stat = failure.Failure(error.ProcessDone(status=""))
+        self.protocol.terminal.transport.processEnded(stat)
 
     def handle_TAB(self) -> None:
         """

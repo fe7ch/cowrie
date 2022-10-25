@@ -20,7 +20,7 @@ class ShellEchoCommandTests(unittest.TestCase):
     """Test for echo command from cowrie/commands/base.py."""
 
     proto = HoneyPotInteractiveProtocol(FakeAvatar(FakeServer()))
-    tr = FakeTransport("1.1.1.1", "1111")
+    tr = FakeTransport("", "31337")
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -42,10 +42,6 @@ class ShellEchoCommandTests(unittest.TestCase):
         self.assertEqual(self.tr.value(), b"test test\n" + PROMPT)
 
     def test_echo_command_003(self) -> None:
-        self.proto.lineReceived(b"echo -n \"test  test\"\n")
-        self.assertEqual(self.tr.value(), b"test  test" + PROMPT)
-
-    def test_echo_command_004(self) -> None:
         self.proto.lineReceived(b"echo -n \"test  test\"\n")
         self.assertEqual(self.tr.value(), b"test  test" + PROMPT)
 

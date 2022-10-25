@@ -132,8 +132,8 @@ class Command_gcc(HoneyPotCommand):
             timeout = 0.1 + random.random()
 
             # Schedule call to make it more time consuming and real
-            self.scheduled = reactor.callLater(
-                timeout, self.generate_file(output_file if output_file else "a.out")
+            self.scheduled = reactor.callLater(  # type: ignore[attr-defined]
+                timeout, self.generate_file, (output_file if output_file else "a.out")
             )
         else:
             self.no_files()
@@ -166,12 +166,11 @@ compilation terminated.\n"""
         version_short = ".".join([str(v) for v in Command_gcc.APP_VERSION[:2]])
 
         if short:
-            data = (
-                """%s (Debian %s-8) %s
+            data = """{} (Debian {}-8) {}
 Copyright (C) 2010 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
-warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.""",
-                (Command_gcc.APP_NAME, version, version),
+warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.""".format(
+                Command_gcc.APP_NAME, version, version
             )
         else:
             data = """Using built-in specs.

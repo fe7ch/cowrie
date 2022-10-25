@@ -158,11 +158,6 @@ timezone = UTC
 #internet_facing_ip = 9.9.9.9
 
 
-# Enable to log the public IP of the honeypot (useful if listening on 127.0.0.1)
-# IP address is obtained by querying http://myip.threatstream.com
-#report_public_ip = true
-
-
 
 # ============================================================================
 # Authentication Specific Options
@@ -187,15 +182,6 @@ auth_class = UserDB
 #
 #auth_class = AuthRandom
 #auth_class_parameters = 2, 5, 10
-
-
-# ============================================================================
-# Historical SSH Specific Options
-# historical options in [honeypot] that have not yet been moved to [ssh]
-# ============================================================================
-
-# Source Port to report in logs (useful if you use iptables to forward ports to Cowrie)
-#reported_ssh_port = 22
 
 
 [backend_pool]
@@ -1017,6 +1003,16 @@ verify_cert = true
 publish_event = true
 debug = false
 
+# Send message using Telegram bot
+# 1. Create a bot following https://core.telegram.org/bots#6-botfather to get token.
+# 2. Send message to your bot, then use https://api.telegram.org/bot{bot_token}/getUpdates to find chat_id.
+# N.b. bot will only send messages on cowrie.login.success, cowrie.command.input/.failed, and
+# cowrie.session.file_download, to prevent spam. 
+[output_telegram]
+enabled = false
+bot_token = 123456789:AbCDEfGhiJkLmnOpQRstUVWxYZ
+chat_id = 987654321
+
 # The crashreporter sends data on Python exceptions to api.cowrie.org
 # To disable set `enabled = false` in cowrie.cfg
 [output_crashreporter]
@@ -1035,3 +1031,21 @@ enabled = false
 # WARNING: A binary file is read from this directory on start-up. Do not
 # change unless you understand the security implications!
 #dump_path = ${honeypot:state_path}/abuseipdb
+
+# Report login and session tracking attempts via the ThreatJammer.com Report API.
+# ThreatJammer.com is a risk assessment tool <https://threatjammer.com>
+# Read the docs for more information: https://cowrie.readthedocs.io/en/latest/threatjammer/README.html
+[output_threatjammer]
+enabled = false
+bearer_token = THREATJAMMER_API_TOKEN
+#api_url=https://dublin.report.threatjammer.com/v1/ip
+#track_login = true
+#track_session = false
+#ttl = 86400
+#category = ABUSE
+#tags = COWRIE,LOGIN,SESSION
+
+# Send output to a Discord webhook
+[output_discord]
+enabled = false
+url = https://discord.com/api/webhooks/id/token
