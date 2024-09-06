@@ -33,6 +33,7 @@ __all__ = [
     "nc",
     "netstat",
     "nohup",
+    "nproc",
     "perl",
     "ping",
     "python",

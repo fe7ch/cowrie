@@ -96,16 +96,16 @@ Try 'base64 --help' for more information.
                 )
                 self.exit()
                 return
-
-            pname = self.fs.resolve_path(args[0], self.protocol.cwd)
-            if not self.fs.isdir(pname):
-                try:
-                    self.dojob(self.fs.file_contents(pname))
-                except Exception as e:
+            elif len(args) == 1:
+                pname = self.fs.resolve_path(args[0], self.protocol.cwd)
+                if not self.fs.isdir(pname):
+                    try:
+                        self.dojob(self.fs.file_contents(pname))
+                    except Exception as e:
                     log.err(str(e))
-                    self.errorWrite(f"base64: {args[0]}: No such file or directory\n")
-            else:
-                self.errorWrite("base64: read error: Is a directory\n")
+                        self.errorWrite(f"base64: {args[0]}: No such file or directory\n")
+                else:
+                    self.errorWrite("base64: read error: Is a directory\n")
 
         self.exit()
 

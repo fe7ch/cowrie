@@ -144,24 +144,26 @@ class Command_scp(HoneyPotCommand):
                 destfile=fname,
             )
 
+            self.safeoutfile = None
+
             # Update the honeyfs to point to downloaded file
             self.fs.update_realfile(self.fs.getfile(fname), hash_path)
             self.fs.chown(fname, self.protocol.user.uid, self.protocol.user.gid)
 
-    def parse_scp_data(self, data: bytes) -> bytes:
+    def parse_scp_data(self, data):
         # scp data format:
         # C0XXX filesize filename\nfile_data\x00
         # 0XXX - file permissions
         # filesize - size of file in bytes in decimal notation
 
-        pos = data.find(b"\n")
+        pos = data.find("\n")
         if pos != -1:
             header = data[:pos]
 
             pos += 1
 
-            if re.match(rb"^C0[\d]{3} [\d]+ [^\s]+$", header):
-                r = re.search(rb"C(0[\d]{3}) ([\d]+) ([^\s]+)", header)
+            if re.match(r"^C0[\d]{3} [\d]+ [^\s]+$", header):
+                r = re.search(r"C(0[\d]{3}) ([\d]+) ([^\s]+)", header)
 
                 if r and r.group(1) and r.group(2) and r.group(3):
                     dend = pos + int(r.group(2))
@@ -172,9 +174,9 @@ class Command_scp(HoneyPotCommand):
                     d = data[pos:dend]
 
                     if self.out_dir:
-                        fname = os.path.join(self.out_dir, r.group(3).decode())
+                        fname = os.path.join(self.out_dir, r.group(3))
                     else:
-                        fname = r.group(3).decode()
+                        fname = r.group(3)
 
                     outfile = self.fs.resolve_path(fname, self.protocol.cwd)
 
@@ -183,37 +185,54 @@ class Command_scp(HoneyPotCommand):
                     except fs.FileNotFound:
                         # The outfile locates at a non-existing directory.
                         self.errorWrite(f"-scp: {outfile}: No such file or directory\n")
-                        return b""
+                        self.safeoutfile = None
+                        return ""
 
                     self.save_file(d, outfile)
 
                     data = data[dend + 1 :]  # cut saved data + \x00
             else:
-                data = b""
+                data = ""
         else:
-            data = b""
+            data = ""
 
         return data
 
     def handle_CTRL_D(self) -> None:
-        if (
-            self.protocol.terminal.stdinlogOpen
-            and self.protocol.terminal.stdinlogFile
-            and os.path.exists(self.protocol.terminal.stdinlogFile)
-        ):
-            with open(self.protocol.terminal.stdinlogFile, "rb") as f:
-                data: bytes = f.read()
-                header: bytes = data[: data.find(b"\n")]
-                if re.match(rb"C0[\d]{3} [\d]+ [^\s]+", header):
-                    content = data[data.find(b"\n") + 1 :]
-                else:
-                    content = b""
 
-            if content:
-                with open(self.protocol.terminal.stdinlogFile, "wb") as f:
-                    f.write(content)
+        if self.protocol.terminal.stdinlogOpen and self.protocol.terminal.stdinlogFile and \
+                os.path.exists(self.protocol.terminal.stdinlogFile):
+            with open(self.protocol.terminal.stdinlogFile, 'rb') as f:
+                data = f.read()
+                while True:
+
+                    if not data:
+                        break
+
+                    data = self.parse_scp_data(data)
+
+            self.protocol.terminal.stdinlogOpen = False
+            os.remove(self.protocol.terminal.stdinlogFile)
 
         self.exit()
+
+    def exit(self) -> None:
+        """
+        Sometimes client is disconnected and command exits after. So cmdstack is gone
+        """
+        if self.protocol.terminal.stdinlogOpen and self.protocol.terminal.stdinlogFile and \
+                os.path.exists(self.protocol.terminal.stdinlogFile):
+            with open(self.protocol.terminal.stdinlogFile, 'rb') as f:
+                data = f.read()
+                while True:
+
+                    if not data:
+                        break
+
+                    data = self.parse_scp_data(data)
+
+            self.protocol.terminal.stdinlogOpen = False
+            os.remove(self.protocol.terminal.stdinlogFile)
 
 
 commands["/usr/bin/scp"] = Command_scp
