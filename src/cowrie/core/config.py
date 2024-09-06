@@ -8,6 +8,7 @@ This module contains code to deal with Cowrie's configuration
 from __future__ import annotations
 
 import configparser
+import os.path
 from os import environ
 from os.path import abspath, dirname, exists, join
 
@@ -51,7 +52,7 @@ def get_config_path() -> list[str]:
     Get absolute path to the config file
     """
     current_path = abspath(dirname(__file__))
-    root = "/".join(current_path.split("/")[:-3])
+    root = "/".join(current_path.split(os.path.sep)[:-3])
 
     config_files = [
         join(root, "etc/cowrie.cfg.dist"),
