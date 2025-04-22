@@ -99,3 +99,11 @@ class ShellUnameCommandTests(unittest.TestCase):
             b"unitTest x86_64 GNU/Linux\n"
             + PROMPT,
         )
+
+    def test_uname_command_010(self) -> None:
+        self.proto.lineReceived(b"uname -svnrm\n")
+        self.assertEqual(
+            self.tr.value(),
+            b"Linux unitTest 3.2.0-4-amd64 #1 SMP Debian 3.2.68-1+deb7u1 x86_64\n"
+            + PROMPT,
+        )
